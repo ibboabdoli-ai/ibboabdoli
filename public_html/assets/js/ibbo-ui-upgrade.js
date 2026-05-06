@@ -11,6 +11,8 @@ class ProblemSolver {
   }
 
   init() {
+    if (!this.cards.length) return;
+
     this.cards.forEach(card => {
       card.addEventListener('click', () => this.selectCard(card));
       card.addEventListener('keydown', (e) => {
@@ -74,8 +76,9 @@ class SmoothScroll {
       e.preventDefault();
       const target = document.querySelector(href);
       if (target) {
+        const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         target.scrollIntoView({
-          behavior: 'smooth',
+          behavior: reduce ? 'auto' : 'smooth',
           block: 'start'
         });
 
@@ -177,7 +180,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Performance: Debounce resize events
   const handleResize = PerformanceUtils.debounce(() => {
     // Add any resize-specific logic here if needed
-    console.log('Window resized');
   }, 250);
 
   window.addEventListener('resize', handleResize);
@@ -186,10 +188,6 @@ document.addEventListener('DOMContentLoaded', () => {
 /**
  * Error handling and logging
  */
-window.addEventListener('error', (e) => {
-  console.error('UI Upgrade Error:', e.error);
-});
-
 // Graceful degradation for older browsers
 if (!window.IntersectionObserver) {
   console.warn('IntersectionObserver not supported. Scroll animations disabled.');
