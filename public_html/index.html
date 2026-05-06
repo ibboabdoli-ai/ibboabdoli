@@ -94,246 +94,7 @@
   <link href="assets/css/style.css" rel="stylesheet">
   <link href="assets/css/ibbo-ui-upgrade.css" rel="stylesheet">
 
-  <style>
-    :root {
-      --ibbo-green: #18d26e;
-      --ibbo-blue: #00bcd4;
-      --ibbo-panel: rgba(255, 255, 255, 0.08);
-      --ibbo-border: rgba(255, 255, 255, 0.14);
-    }
-
-    #header .hero-kicker {
-      margin: 0 0 14px;
-      color: var(--ibbo-blue);
-      font-family: "Inter", sans-serif;
-      font-size: 14px;
-      font-weight: 600;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-      display: inline-flex;
-      width: fit-content;
-      padding: 8px 10px;
-      background: rgba(0, 188, 212, .12);
-      border: 1px solid rgba(0, 188, 212, .22);
-      border-radius: 4px;
-    }
-
-    #header .hero-subtext {
-      max-width: 760px;
-      margin: 18px 0 0;
-      color: rgba(255, 255, 255, .82);
-      font-size: 18px;
-      line-height: 1.7;
-    }
-
-    #header .hero-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-top: 26px;
-    }
-
-    #header .hero-actions .btn {
-      min-height: 44px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 6px;
-      font-weight: 600;
-      padding: 10px 16px;
-    }
-
-    #header .hero-actions .btn-outline-light {
-      border-color: rgba(255, 255, 255, .5);
-    }
-
-    #header.header-top .hero-kicker,
-    #header.header-top .hero-subtext,
-    #header.header-top .hero-actions,
-    #header.header-top .hero-proof {
-      display: none;
-    }
-
-    #header .hero-proof {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 22px;
-      color: rgba(255, 255, 255, .76);
-    }
-
-    #header .hero-proof span {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      min-height: 36px;
-      padding: 7px 10px;
-      background: rgba(255, 255, 255, .075);
-      border: 1px solid rgba(255, 255, 255, .14);
-      border-radius: 6px;
-      font-size: 14px;
-    }
-
-    #header .hero-proof i {
-      color: var(--ibbo-green);
-    }
-
-    .section-intro {
-      max-width: 920px;
-      color: rgba(255, 255, 255, .78);
-      line-height: 1.8;
-    }
-
-    .technical-cases .case-card,
-    .technical-cases .case-card:focus-within {
-      height: 100%;
-      padding: 24px;
-      background: var(--ibbo-panel);
-      border: 1px solid var(--ibbo-border);
-      border-left: 3px solid var(--ibbo-green);
-      border-radius: 8px;
-    }
-
-    .technical-cases .case-card h4 {
-      color: #fff;
-      font-size: 20px;
-      font-weight: 700;
-      line-height: 1.3;
-      margin-bottom: 14px;
-    }
-
-    .technical-cases .case-card p {
-      color: rgba(255, 255, 255, .78);
-      line-height: 1.65;
-      margin-bottom: 10px;
-    }
-
-    .technical-cases .case-card strong {
-      color: #fff;
-    }
-
-    .technical-cases .case-translation {
-      color: rgba(255, 255, 255, .58);
-      font-size: 13px;
-      line-height: 1.55;
-    }
-
-    .technical-cases .case-label {
-      display: inline-flex;
-      width: fit-content;
-      margin-bottom: 14px;
-      padding: 5px 9px;
-      color: #bfffe0;
-      background: rgba(24, 210, 110, .12);
-      border: 1px solid rgba(24, 210, 110, .22);
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 700;
-      line-height: 1;
-      text-transform: uppercase;
-    }
-
-    .tool-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 16px;
-    }
-
-    .tool-list span {
-      display: inline-flex;
-      align-items: center;
-      min-height: 28px;
-      padding: 4px 9px;
-      color: #fff;
-      background: rgba(0, 188, 212, .16);
-      border: 1px solid rgba(0, 188, 212, .28);
-      border-radius: 4px;
-      font-size: 13px;
-    }
-
-    .core-list,
-    .focus-list {
-      padding-left: 18px;
-      margin-bottom: 0;
-      color: rgba(255, 255, 255, .82);
-    }
-
-    .core-list li,
-    .focus-list li {
-      margin-bottom: 10px;
-    }
-
-    .linkedin-embed-wrapper {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 24px;
-      margin-top: 24px;
-    }
-
-    .linkedin-embed-wrapper iframe {
-      width: 100%;
-      min-height: 560px;
-      background: #111;
-      border: 0;
-      border-radius: 8px;
-    }
-
-    .linkedin-actions,
-    .resume-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-top: 24px;
-    }
-
-    .contact .info-box a {
-      color: inherit;
-      text-decoration: underline;
-      text-underline-offset: 3px;
-    }
-
-    @media (max-width: 992px) {
-      #header .hero-subtext {
-        font-size: 16px;
-      }
-
-      #header .hero-proof {
-        justify-content: center;
-      }
-
-      .linkedin-embed-wrapper {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    @media (max-width: 576px) {
-      #header .hero-actions .btn,
-      #header .hero-proof,
-      #header .hero-proof span {
-        width: 100%;
-      }
-
-      #header .hero-proof span {
-        justify-content: center;
-      }
-
-      .section-title p {
-        font-size: 24px;
-        line-height: 1.18;
-        overflow-wrap: anywhere;
-      }
-
-      .section-title h2::after {
-        width: 90px;
-      }
-
-      .profile-photo {
-        height: auto;
-        object-fit: contain;
-      }
-    }
-  </style>
+  
 </head>
 
 <body>
@@ -433,7 +194,7 @@
       </div>
 
       <div class="problem-solver-grid">
-        <button class="problem-solver-card" aria-expanded="false">
+        <button class="problem-solver-card" aria-expanded="false" aria-label="Robot Alarm workflow">
           <h3><span class="icon">🤖</span> Robot Alarm</h3>
           <p>ABB robot system faults, motion errors, and safety system issues</p>
           <div class="problem-solver-workflow">
@@ -460,7 +221,7 @@
           </div>
         </button>
 
-        <button class="problem-solver-card" aria-expanded="false">
+        <button class="problem-solver-card" aria-expanded="false" aria-label="Vision Timeout workflow">
           <h3><span class="icon">👁️</span> Vision Timeout</h3>
           <p>Cognex camera failures, inspection delays, and image processing errors</p>
           <div class="problem-solver-workflow">
@@ -487,7 +248,7 @@
           </div>
         </button>
 
-        <button class="problem-solver-card" aria-expanded="false">
+        <button class="problem-solver-card" aria-expanded="false" aria-label="PLC I/O Fault workflow">
           <h3><span class="icon">🔧</span> PLC / I/O Fault</h3>
           <p>Programmable logic controller errors and input/output signal issues</p>
           <div class="problem-solver-workflow">
@@ -514,7 +275,7 @@
           </div>
         </button>
 
-        <button class="problem-solver-card" aria-expanded="false">
+        <button class="problem-solver-card" aria-expanded="false" aria-label="Production Stop workflow">
           <h3><span class="icon">⏹️</span> Production Stop</h3>
           <p>Complete line shutdowns, emergency stops, and critical system failures</p>
           <div class="problem-solver-workflow">
@@ -541,7 +302,7 @@
           </div>
         </button>
 
-        <button class="problem-solver-card" aria-expanded="false">
+        <button class="problem-solver-card" aria-expanded="false" aria-label="Electrical Issue workflow">
           <h3><span class="icon">⚡</span> Electrical Issue</h3>
           <p>Power failures, motor faults, and electrical system troubleshooting</p>
           <div class="problem-solver-workflow">

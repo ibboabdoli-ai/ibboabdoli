@@ -1,0 +1,195 @@
+/* =========================================================
+   Ibbo UI Upgrade - Shared premium industrial design system
+   Scope: tokenized visuals, hero dashboard, problem solver,
+   unified cards/buttons/forms/navigation states.
+   ========================================================= */
+
+/* ---------- 1) Design tokens ---------- */
+:root {
+  --ibbo-font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --ibbo-bg-0: #060c16;
+  --ibbo-bg-1: #0b1324;
+  --ibbo-bg-2: #101a30;
+  --ibbo-text: #eef6ff;
+  --ibbo-text-muted: rgba(238, 246, 255, .78);
+  --ibbo-cyan: #22d3ee;
+  --ibbo-blue: #3b82f6;
+  --ibbo-green: #22c55e;
+  --ibbo-line: rgba(148, 163, 184, .28);
+  --ibbo-glass: rgba(11, 19, 36, .64);
+  --ibbo-grad-main: linear-gradient(130deg, rgba(34, 211, 238, .20), rgba(59, 130, 246, .18) 55%, rgba(34, 197, 94, .14));
+  --ibbo-grad-hero: radial-gradient(circle at 10% 16%, rgba(34, 211, 238, .24), transparent 42%), radial-gradient(circle at 88% 12%, rgba(34, 197, 94, .16), transparent 40%);
+  --ibbo-r-sm: 8px;
+  --ibbo-r-md: 12px;
+  --ibbo-r-lg: 18px;
+  --ibbo-shadow-1: 0 12px 30px rgba(0, 0, 0, .3);
+  --ibbo-shadow-2: 0 0 0 1px rgba(34, 211, 238, .16), 0 20px 38px rgba(2, 6, 23, .52);
+  --ibbo-tr: .24s cubic-bezier(.2, .75, .2, 1);
+}
+
+/* ---------- 2) Global baseline + background grid ---------- */
+html, body { overflow-x: clip; }
+body { font-family: var(--ibbo-font-sans); background: var(--ibbo-bg-0); color: var(--ibbo-text-muted); }
+section { position: relative; }
+section::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: .2;
+  background-image: linear-gradient(rgba(148, 163, 184, .08) 1px, transparent 1px), linear-gradient(90deg, rgba(148, 163, 184, .08) 1px, transparent 1px);
+  background-size: 42px 42px;
+}
+.container, .problem-solver-container, .trusted-container { position: relative; z-index: 1; }
+h1,h2,h3,h4,h5,.section-title p,.logo a { color: var(--ibbo-text); }
+#header .hero-kicker,
+.section-title h2,
+.problem-solver-title p,
+.trusted-title p,
+.case-label { letter-spacing: .08em; text-transform: uppercase; }
+.section-intro,.about .content p,.resume p,.contact p,.technical-cases .case-card p { color: var(--ibbo-text-muted); }
+
+/* ---------- 3) Shared card surface (selected glassmorphism) ---------- */
+.hero-dashboard-item,
+.ai-assistant-preview,
+.problem-solver-card,
+.trusted-badge,
+.technical-cases .case-card,
+.about .content,
+.resume .resume-item,
+.contact .php-email-form,
+.contact .info-box {
+  background: linear-gradient(160deg, rgba(16, 26, 48, .78), rgba(6, 12, 22, .7));
+  border: 1px solid var(--ibbo-line);
+  border-radius: var(--ibbo-r-md);
+  box-shadow: var(--ibbo-shadow-1);
+  backdrop-filter: blur(10px);
+}
+.hero-dashboard-item:hover,
+.problem-solver-card:hover,
+.trusted-badge:hover,
+.technical-cases .case-card:hover,
+.resume .resume-item:hover,
+.contact .info-box:hover,
+.contact .php-email-form:hover {
+  transform: translateY(-3px);
+  border-color: rgba(34, 211, 238, .35);
+  box-shadow: var(--ibbo-shadow-2);
+}
+
+/* ---------- 4) Hero dashboard ---------- */
+#header { background: var(--ibbo-grad-hero), var(--ibbo-bg-0); }
+.hero-dashboard {
+  margin-top: 1.25rem;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: .8rem;
+}
+.hero-dashboard-item { padding: .95rem .9rem; min-height: 82px; }
+.hero-dashboard-item:nth-child(1), .hero-dashboard-item:nth-child(2), .hero-dashboard-item:nth-child(3), .hero-dashboard-item:nth-child(4) { grid-column: span 3; }
+.hero-dashboard-item:nth-child(5) { grid-column: span 12; }
+.hero-dashboard-label { font-size: .73rem; letter-spacing: .08em; text-transform: uppercase; color: rgba(238,246,255,.7); margin-bottom: .4rem; }
+.hero-dashboard-value { color: var(--ibbo-text); font-weight: 600; line-height: 1.4; }
+.status-indicator {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-left: .45rem;
+  border-radius: 50%;
+  vertical-align: middle;
+  background: var(--ibbo-green);
+  box-shadow: 0 0 0 0 rgba(34,197,94,.8);
+  animation: ibboPulse 1.8s ease-out infinite;
+}
+
+/* ---------- 5) Problem solver bento layout ---------- */
+#problem-solver { padding: 80px 0 30px; }
+.problem-solver-title h2 { color: var(--ibbo-text); }
+.problem-solver-title p { color: rgba(34,211,238,.9); letter-spacing: .08em; text-transform: uppercase; }
+.problem-solver-grid {
+  margin-top: 1.2rem;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: .9rem;
+}
+.problem-solver-card {
+  grid-column: span 4;
+  text-align: left;
+  padding: 1rem;
+  width: 100%;
+  color: var(--ibbo-text);
+  transition: transform var(--ibbo-tr), box-shadow var(--ibbo-tr), border-color var(--ibbo-tr);
+}
+.problem-solver-card h3 { font-size: 1.08rem; margin-bottom: .5rem; }
+.problem-solver-card .icon { color: var(--ibbo-cyan); }
+.problem-solver-card p { margin-bottom: .75rem; color: var(--ibbo-text-muted); }
+.problem-solver-workflow { display: none; }
+.problem-solver-card.active {
+  border-color: rgba(34, 211, 238, .58);
+  background: linear-gradient(160deg, rgba(19, 34, 61, .86), rgba(10, 23, 42, .8));
+}
+.problem-solver-workflow.active { display: grid; gap: .45rem; }
+.workflow-step { display: flex; gap: .55rem; align-items: flex-start; }
+.workflow-step-number {
+  min-width: 24px; height: 24px;
+  border-radius: 999px;
+  display: grid; place-items: center;
+  font-size: .78rem; font-weight: 700;
+  background: rgba(34, 211, 238, .2);
+  border: 1px solid rgba(34, 211, 238, .4);
+}
+.workflow-step-text { font-size: .92rem; color: rgba(238,246,255,.9); }
+
+/* ---------- 6) Navigation, buttons, tags, forms ---------- */
+.btn,.language-switch button,.navbar a,.contact .php-email-form button[type=submit] {
+  border-radius: var(--ibbo-r-sm);
+  transition: background var(--ibbo-tr), border-color var(--ibbo-tr), color var(--ibbo-tr), transform var(--ibbo-tr), box-shadow var(--ibbo-tr);
+}
+.btn-primary,.btn-success,.contact .php-email-form button[type=submit] {
+  background: var(--ibbo-grad-main);
+  border-color: rgba(34, 211, 238, .48);
+  color: #effcff;
+}
+.btn:hover,.language-switch button:hover,.contact .php-email-form button[type=submit]:hover { transform: translateY(-2px); }
+.btn-outline-light { border-color: rgba(255,255,255,.42); }
+.navbar a.active,.navbar a:hover,.language-switch button.active {
+  background: rgba(34, 211, 238, .14);
+  border-color: rgba(34, 211, 238, .4);
+  color: var(--ibbo-text);
+}
+.case-label,.tool-list span,#header .hero-proof span {
+  background: rgba(34, 211, 238, .12);
+  border: 1px solid rgba(34, 211, 238, .28);
+  color: #ccfbff;
+}
+input,textarea,select,.contact .php-email-form input,.contact .php-email-form textarea {
+  background: var(--ibbo-glass);
+  border: 1px solid var(--ibbo-line);
+  color: var(--ibbo-text);
+  border-radius: var(--ibbo-r-sm);
+}
+input:focus,textarea:focus,select:focus,.problem-solver-card:focus-visible,.btn:focus-visible,.navbar a:focus-visible,.language-switch button:focus-visible {
+  outline: none;
+  border-color: rgba(34, 211, 238, .6);
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, .18);
+}
+.linkedin-embed-wrapper iframe { border-radius: var(--ibbo-r-md); border: 1px solid var(--ibbo-line); background: var(--ibbo-bg-1); }
+
+/* ---------- 7) Responsive + reduced motion ---------- */
+@media (max-width: 992px) {
+  .hero-dashboard-item:nth-child(1), .hero-dashboard-item:nth-child(2), .hero-dashboard-item:nth-child(3), .hero-dashboard-item:nth-child(4) { grid-column: span 6; }
+  .problem-solver-card { grid-column: span 6; }
+}
+@media (max-width: 576px) {
+  .hero-actions .btn, .hero-proof, .hero-proof span, .language-switch button { width: 100%; }
+  .hero-dashboard-item, .problem-solver-card { grid-column: span 12; }
+  .problem-solver-card { padding: .9rem; }
+}
+@keyframes ibboPulse {
+  0% { box-shadow: 0 0 0 0 rgba(34,197,94,.8); }
+  70% { box-shadow: 0 0 0 12px rgba(34,197,94,0); }
+  100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}

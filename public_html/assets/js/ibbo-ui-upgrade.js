@@ -11,6 +11,8 @@ class ProblemSolver {
   }
 
   init() {
+    if (!this.cards.length) return;
+
     this.cards.forEach(card => {
       card.addEventListener('click', () => this.selectCard(card));
       card.addEventListener('keydown', (e) => {
@@ -44,9 +46,10 @@ class ProblemSolver {
     }
 
     // Smooth scroll to show the workflow
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     setTimeout(() => {
       selectedCard.scrollIntoView({
-        behavior: 'smooth',
+        behavior: reduce ? 'auto' : 'smooth',
         block: 'nearest'
       });
     }, 300);
@@ -74,8 +77,9 @@ class SmoothScroll {
       e.preventDefault();
       const target = document.querySelector(href);
       if (target) {
+        const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         target.scrollIntoView({
-          behavior: 'smooth',
+          behavior: reduce ? 'auto' : 'smooth',
           block: 'start'
         });
 
@@ -108,6 +112,8 @@ class ScrollAnimations {
   }
 
   init() {
+    if (!window.IntersectionObserver) return;
+
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
@@ -170,14 +176,13 @@ document.addEventListener('DOMContentLoaded', () => {
   document.body.classList.add('loaded');
 
   // Handle reduced motion preference
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     document.body.classList.add('reduced-motion');
   }
 
   // Performance: Debounce resize events
   const handleResize = PerformanceUtils.debounce(() => {
     // Add any resize-specific logic here if needed
-    console.log('Window resized');
   }, 250);
 
   window.addEventListener('resize', handleResize);
@@ -186,10 +191,6 @@ document.addEventListener('DOMContentLoaded', () => {
 /**
  * Error handling and logging
  */
-window.addEventListener('error', (e) => {
-  console.error('UI Upgrade Error:', e.error);
-});
-
 // Graceful degradation for older browsers
 if (!window.IntersectionObserver) {
   console.warn('IntersectionObserver not supported. Scroll animations disabled.');
