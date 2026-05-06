@@ -46,9 +46,10 @@ class ProblemSolver {
     }
 
     // Smooth scroll to show the workflow
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     setTimeout(() => {
       selectedCard.scrollIntoView({
-        behavior: 'smooth',
+        behavior: reduce ? 'auto' : 'smooth',
         block: 'nearest'
       });
     }, 300);
@@ -111,6 +112,8 @@ class ScrollAnimations {
   }
 
   init() {
+    if (!window.IntersectionObserver) return;
+
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
@@ -173,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.body.classList.add('loaded');
 
   // Handle reduced motion preference
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     document.body.classList.add('reduced-motion');
   }
 
