@@ -28,7 +28,7 @@
 }
 
 /* ---------- 2) Global baseline + background grid ---------- */
-html, body { overflow-x: hidden; }
+html, body { overflow-x: clip; }
 body { font-family: var(--ibbo-font-sans); background: var(--ibbo-bg-0); color: var(--ibbo-text-muted); }
 section { position: relative; }
 section::before {
@@ -42,6 +42,11 @@ section::before {
 }
 .container, .problem-solver-container, .trusted-container { position: relative; z-index: 1; }
 h1,h2,h3,h4,h5,.section-title p,.logo a { color: var(--ibbo-text); }
+#header .hero-kicker,
+.section-title h2,
+.problem-solver-title p,
+.trusted-title p,
+.case-label { letter-spacing: .08em; text-transform: uppercase; }
 .section-intro,.about .content p,.resume p,.contact p,.technical-cases .case-card p { color: var(--ibbo-text-muted); }
 
 /* ---------- 3) Shared card surface (selected glassmorphism) ---------- */
@@ -146,6 +151,7 @@ h1,h2,h3,h4,h5,.section-title p,.logo a { color: var(--ibbo-text); }
   color: #effcff;
 }
 .btn:hover,.language-switch button:hover,.contact .php-email-form button[type=submit]:hover { transform: translateY(-2px); }
+.btn-outline-light { border-color: rgba(255,255,255,.42); }
 .navbar a.active,.navbar a:hover,.language-switch button.active {
   background: rgba(34, 211, 238, .14);
   border-color: rgba(34, 211, 238, .4);
@@ -162,11 +168,12 @@ input,textarea,select,.contact .php-email-form input,.contact .php-email-form te
   color: var(--ibbo-text);
   border-radius: var(--ibbo-r-sm);
 }
-input:focus,textarea:focus,select:focus,.problem-solver-card:focus-visible,.btn:focus-visible,.navbar a:focus-visible {
+input:focus,textarea:focus,select:focus,.problem-solver-card:focus-visible,.btn:focus-visible,.navbar a:focus-visible,.language-switch button:focus-visible {
   outline: none;
   border-color: rgba(34, 211, 238, .6);
   box-shadow: 0 0 0 3px rgba(34, 211, 238, .18);
 }
+.linkedin-embed-wrapper iframe { border-radius: var(--ibbo-r-md); border: 1px solid var(--ibbo-line); background: var(--ibbo-bg-1); }
 
 /* ---------- 7) Responsive + reduced motion ---------- */
 @media (max-width: 992px) {
