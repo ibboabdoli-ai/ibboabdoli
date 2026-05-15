@@ -1,0 +1,2 @@
+Trigger redeploy after portrait and case visual fixes.
+2026-05-15 visual-fix-3
