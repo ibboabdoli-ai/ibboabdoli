@@ -3,7 +3,7 @@ const nav=document.querySelector('.nav');
 const menu=document.querySelector('.menu');
 const year=document.querySelector('[data-year]');
 
-if(year) year.textContent = new Date().getFullYear();
+if(year) year.textContent=new Date().getFullYear();
 
 const onScroll=()=>topbar&&topbar.classList.toggle('scrolled',scrollY>24);
 onScroll();
@@ -33,68 +33,44 @@ addEventListener('scroll',()=>{
   navLinks.forEach(link=>link.classList.toggle('active',link.getAttribute('href')==='#'+current));
 },{passive:true});
 
-// Contact details: phone number removed from the entire visible website.
 (()=>{
   const email='ibbo.abdoli@gmail.com';
   const linkedin='https://www.linkedin.com/in/ibbo-abdoli/';
+  const cal15='https://cal.com/ibboabdoli/15min';
+  const cal30='https://cal.com/ibboabdoli/30min';
+
   document.querySelectorAll('.contact-list').forEach(list=>{
     list.innerHTML=`
       <a href="mailto:${email}"><span>Email:</span><strong>${email}</strong></a>
       <a href="${linkedin}" target="_blank" rel="noopener"><span>LinkedIn:</span><strong>Open profile</strong></a>
       <span><span>Location:</span><strong>Stockholm, Sweden</strong></span>
     `;
+    if(!list.nextElementSibling?.classList?.contains('booking-card')){
+      list.insertAdjacentHTML('afterend',`
+        <div class="booking-card">
+          <span class="booking-eyebrow">Calendar booking</span>
+          <h3>Book a technical meeting</h3>
+          <p>Choose a 15 minute quick call or a 30 minute automation / troubleshooting discussion.</p>
+          <div class="booking-actions">
+            <a class="booking-btn primary" href="${cal15}" target="_blank" rel="noopener">Book 15 min</a>
+            <a class="booking-btn" href="${cal30}" target="_blank" rel="noopener">Book 30 min</a>
+          </div>
+        </div>
+      `);
+    }
   });
+
   document.querySelectorAll('a[href^="tel:"]').forEach(a=>a.remove());
 })();
 
 (()=>{
   const st=document.createElement('style');
   st.textContent=`
-  @media(max-width:640px){
-    .topbar{height:72px!important;padding:0 14px!important;gap:8px!important}
-    .brand{gap:8px!important;min-width:0!important;max-width:42vw!important;overflow:hidden!important}
-    .mark{width:34px!important;height:34px!important;flex:0 0 34px!important;font-size:12px!important}
-    .brand strong{font-size:13px!important;letter-spacing:.04em!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;line-height:1.1!important}
-    .brand em{display:none!important}
-    .actions{gap:8px!important;flex:0 0 auto!important}
-    .lang{height:36px!important}
-    .lang a{min-width:38px!important;font-size:11px!important}
-    .menu{height:36px!important;padding:0 12px!important;font-size:11px!important}
-    .hero{padding-top:72px!important}
-  }
-  .contact-list a,.contact-list>span{display:flex!important;justify-content:space-between!important;align-items:center!important;gap:18px!important;border-bottom:1px solid var(--line)!important;padding:0 0 14px!important;line-height:1.45!important}
-  .contact-list span{color:var(--muted)!important;min-width:max-content!important}
-  .contact-list strong{color:var(--text)!important;text-align:right!important;word-break:break-word!important}
-  @media(max-width:560px){.contact-list{gap:16px!important}.contact-list a,.contact-list>span{display:grid!important;grid-template-columns:1fr!important;gap:6px!important;align-items:start!important}.contact-list strong{text-align:left!important}}
-
-  .case .visual{height:190px!important;position:relative;overflow:hidden;background:#071019!important;isolation:isolate;border-bottom:1px solid rgba(139,198,235,.18)}
-  .case .visual:before{content:'';position:absolute;inset:0;z-index:3;background:linear-gradient(110deg,transparent 0 42%,rgba(37,186,255,.28) 48%,transparent 56%);transform:translateX(-120%);animation:caseScan 4.6s ease-in-out infinite}
-  .case .visual:after{content:'';position:absolute;inset:18px;z-index:2;border:1px solid rgba(37,186,255,.22);box-shadow:inset 0 0 42px rgba(37,186,255,.10),0 0 34px rgba(37,186,255,.12)}
-  .case:nth-child(1) .visual{background:radial-gradient(circle at 72% 66%,rgba(220,232,239,.98) 0 13px,rgba(109,125,136,.9) 14px 23px,transparent 24px),radial-gradient(circle at 58% 38%,rgba(220,232,239,.96) 0 16px,rgba(109,125,136,.85) 17px 27px,transparent 28px),radial-gradient(circle at 38% 58%,rgba(220,232,239,.88) 0 13px,rgba(109,125,136,.8) 14px 23px,transparent 24px),linear-gradient(30deg,transparent 0 42%,rgba(220,232,239,.85) 43% 50%,transparent 51%),linear-gradient(-28deg,transparent 0 44%,rgba(149,166,178,.8) 45% 51%,transparent 52%),radial-gradient(circle at 26% 28%,rgba(37,186,255,.16),transparent 28%),linear-gradient(135deg,#0b1721,#050a0f)!important;background-size:auto,auto,auto,78% 78%,72% 72%,auto,auto;background-position:center,center,center,50% 50%,48% 54%,center,center}
-  .case:nth-child(1) .visual:after{content:'ROBOT PATH · RAPID · MOTION';display:flex;align-items:flex-end;justify-content:flex-start;padding:12px;color:#25baff;font:900 11px var(--mono);letter-spacing:.12em}
-  .case:nth-child(2) .visual{background:radial-gradient(circle at 54% 55%,#02070b 0 22px,#25baff 23px 28px,rgba(220,232,239,.92) 29px 46px,rgba(37,186,255,.25) 47px 78px,transparent 79px),radial-gradient(circle at 54% 55%,rgba(255,138,61,.34),transparent 24%),radial-gradient(circle at 72% 34%,rgba(255,138,61,.88) 0 8px,transparent 9px),linear-gradient(90deg,transparent 0 28%,rgba(220,232,239,.18) 29% 70%,transparent 71%),linear-gradient(135deg,#0b1721,#050a0f)!important}
-  .case:nth-child(2) .visual:after{content:'VISION TRIGGER · CAMERA · TIMEOUT';display:flex;align-items:flex-end;justify-content:flex-start;padding:12px;color:#25baff;font:900 11px var(--mono);letter-spacing:.12em}
-  .case:nth-child(3) .visual{background:linear-gradient(90deg,transparent 0 32%,rgba(37,186,255,.22) 33% 37%,transparent 38% 41%,rgba(37,186,255,.20) 42% 46%,transparent 47% 50%,rgba(37,186,255,.18) 51% 55%,transparent 56% 60%,rgba(255,138,61,.24) 61% 65%,transparent 66%),radial-gradient(circle at 36% 38%,#62f6b1 0 4px,transparent 5px),radial-gradient(circle at 44% 48%,#62f6b1 0 4px,transparent 5px),radial-gradient(circle at 54% 38%,#62f6b1 0 4px,transparent 5px),radial-gradient(circle at 63% 48%,#ff8a3d 0 4px,transparent 5px),linear-gradient(135deg,#0b1721,#050a0f)!important}
-  .case:nth-child(3) .visual:after{content:'PLC / I-O STATUS · BUS · ALARMS';display:flex;align-items:flex-end;justify-content:flex-start;padding:12px;color:#25baff;font:900 11px var(--mono);letter-spacing:.12em}
-  .case .visual{box-shadow:inset 0 -80px 110px rgba(3,7,10,.34),inset 0 0 0 1px rgba(37,186,255,.08)}
-  @keyframes caseScan{0%,42%{transform:translateX(-120%)}65%{transform:translateX(120%)}100%{transform:translateX(120%)}}
-
-  .portrait{position:relative!important;overflow:hidden!important;min-height:420px!important;background:#061017!important;border:1px solid rgba(139,198,235,.28)!important;box-shadow:0 28px 90px rgba(0,0,0,.42),inset 0 0 80px rgba(37,186,255,.08)!important}
-  .portrait:before{content:''!important;position:absolute;inset:0!important;background:linear-gradient(rgba(37,186,255,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(37,186,255,.08) 1px,transparent 1px),radial-gradient(circle at 60% 42%,rgba(37,186,255,.22),transparent 34%),linear-gradient(135deg,#08131d,#03070a)!important;background-size:34px 34px,34px 34px,auto,auto!important;color:transparent!important;animation:videoGrid 7s linear infinite!important}
-  .portrait:after{content:'LIVE CELL FEED\\A PLC · ROBOT · VISION';white-space:pre;position:absolute;left:22px;bottom:22px;right:22px;z-index:4;color:#25baff;font:900 12px var(--mono);letter-spacing:.14em;line-height:1.8;padding-top:14px;border-top:1px solid rgba(37,186,255,.35);text-shadow:0 0 18px rgba(37,186,255,.55)}
-  .portrait .motion-panel{position:absolute;inset:0;z-index:2;pointer-events:none}
-  .portrait .motion-panel:before{content:'';position:absolute;left:12%;right:12%;bottom:18%;height:58px;border:1px solid rgba(139,198,235,.32);background:repeating-linear-gradient(90deg,rgba(255,255,255,.10) 0 1px,transparent 1px 28px),linear-gradient(90deg,rgba(255,138,61,.16),rgba(37,186,255,.12));box-shadow:0 22px 70px rgba(0,0,0,.55)}
-  .portrait .motion-panel:after{content:'';position:absolute;inset:0;background:linear-gradient(110deg,transparent 0 43%,rgba(37,186,255,.28) 48%,transparent 55%);transform:translateX(-120%);animation:videoScan 3.9s ease-in-out infinite;mix-blend-mode:screen}
-  .portrait .robot-video{position:absolute;left:9%;top:12%;width:82%;height:70%;z-index:3;filter:drop-shadow(0 0 28px rgba(37,186,255,.28))}
-  .portrait .rv-arm{transform-origin:420px 330px;animation:rvArm 6s ease-in-out infinite}
-  .portrait .rv-tool{transform-origin:265px 330px;animation:rvTool 3.5s ease-in-out infinite}
-  .portrait .rv-led{animation:rvLed 1.2s ease-in-out infinite}
-  @keyframes videoGrid{to{background-position:34px 34px,34px 34px,center,center}}
-  @keyframes videoScan{0%,45%{transform:translateX(-120%)}70%,100%{transform:translateX(120%)}}
-  @keyframes rvArm{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(7deg)}}
-  @keyframes rvTool{0%,100%{transform:rotate(4deg)}50%{transform:rotate(-9deg)}}
-  @keyframes rvLed{0%,100%{opacity:.35}50%{opacity:1}}
-  @media(max-width:980px){.portrait{min-height:340px!important}}
+  @media(max-width:640px){.topbar{height:72px!important;padding:0 14px!important;gap:8px!important}.brand{gap:8px!important;min-width:0!important;max-width:42vw!important;overflow:hidden!important}.mark{width:34px!important;height:34px!important;flex:0 0 34px!important;font-size:12px!important}.brand strong{font-size:13px!important;letter-spacing:.04em!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;line-height:1.1!important}.brand em{display:none!important}.actions{gap:8px!important;flex:0 0 auto!important}.lang{height:36px!important}.lang a{min-width:38px!important;font-size:11px!important}.menu{height:36px!important;padding:0 12px!important;font-size:11px!important}.hero{padding-top:72px!important}}
+  .contact-list a,.contact-list>span{display:flex!important;justify-content:space-between!important;align-items:center!important;gap:18px!important;border-bottom:1px solid var(--line)!important;padding:0 0 14px!important;line-height:1.45!important}.contact-list span{color:var(--muted)!important;min-width:max-content!important}.contact-list strong{color:var(--text)!important;text-align:right!important;word-break:break-word!important}@media(max-width:560px){.contact-list{gap:16px!important}.contact-list a,.contact-list>span{display:grid!important;grid-template-columns:1fr!important;gap:6px!important;align-items:start!important}.contact-list strong{text-align:left!important}}
+  .booking-card{margin-top:24px;border:1px solid var(--line);background:linear-gradient(135deg,rgba(37,186,255,.10),rgba(255,138,61,.06));padding:22px;box-shadow:0 22px 70px rgba(0,0,0,.28)}.booking-eyebrow{display:block;color:var(--blue)!important;font:900 11px var(--mono);letter-spacing:.14em;text-transform:uppercase;margin-bottom:10px}.booking-card h3{margin:0 0 8px;font-size:22px;color:var(--text)}.booking-card p{margin:0 0 18px;color:#b6c5cf;line-height:1.65}.booking-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}.booking-btn{display:flex;align-items:center;justify-content:center;min-height:44px;border:1px solid var(--line);font:900 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--text);text-decoration:none}.booking-btn.primary{background:var(--blue);border-color:var(--blue);color:#021019}.booking-btn:hover{border-color:var(--blue);color:var(--blue)}.booking-btn.primary:hover{color:#021019}@media(max-width:560px){.booking-actions{grid-template-columns:1fr}}
+  .case .visual{height:190px!important;position:relative;overflow:hidden;background:#071019!important;isolation:isolate;border-bottom:1px solid rgba(139,198,235,.18)}.case .visual:before{content:'';position:absolute;inset:0;z-index:3;background:linear-gradient(110deg,transparent 0 42%,rgba(37,186,255,.28) 48%,transparent 56%);transform:translateX(-120%);animation:caseScan 4.6s ease-in-out infinite}.case .visual:after{content:'';position:absolute;inset:18px;z-index:2;border:1px solid rgba(37,186,255,.22);box-shadow:inset 0 0 42px rgba(37,186,255,.10),0 0 34px rgba(37,186,255,.12)}.case:nth-child(1) .visual{background:radial-gradient(circle at 72% 66%,rgba(220,232,239,.98) 0 13px,rgba(109,125,136,.9) 14px 23px,transparent 24px),radial-gradient(circle at 58% 38%,rgba(220,232,239,.96) 0 16px,rgba(109,125,136,.85) 17px 27px,transparent 28px),radial-gradient(circle at 38% 58%,rgba(220,232,239,.88) 0 13px,rgba(109,125,136,.8) 14px 23px,transparent 24px),linear-gradient(30deg,transparent 0 42%,rgba(220,232,239,.85) 43% 50%,transparent 51%),linear-gradient(-28deg,transparent 0 44%,rgba(149,166,178,.8) 45% 51%,transparent 52%),radial-gradient(circle at 26% 28%,rgba(37,186,255,.16),transparent 28%),linear-gradient(135deg,#0b1721,#050a0f)!important;background-size:auto,auto,auto,78% 78%,72% 72%,auto,auto;background-position:center,center,center,50% 50%,48% 54%,center,center}.case:nth-child(1) .visual:after{content:'ROBOT PATH · RAPID · MOTION';display:flex;align-items:flex-end;justify-content:flex-start;padding:12px;color:#25baff;font:900 11px var(--mono);letter-spacing:.12em}.case:nth-child(2) .visual{background:radial-gradient(circle at 54% 55%,#02070b 0 22px,#25baff 23px 28px,rgba(220,232,239,.92) 29px 46px,rgba(37,186,255,.25) 47px 78px,transparent 79px),radial-gradient(circle at 54% 55%,rgba(255,138,61,.34),transparent 24%),radial-gradient(circle at 72% 34%,rgba(255,138,61,.88) 0 8px,transparent 9px),linear-gradient(90deg,transparent 0 28%,rgba(220,232,239,.18) 29% 70%,transparent 71%),linear-gradient(135deg,#0b1721,#050a0f)!important}.case:nth-child(2) .visual:after{content:'VISION TRIGGER · CAMERA · TIMEOUT';display:flex;align-items:flex-end;justify-content:flex-start;padding:12px;color:#25baff;font:900 11px var(--mono);letter-spacing:.12em}.case:nth-child(3) .visual{background:linear-gradient(90deg,transparent 0 32%,rgba(37,186,255,.22) 33% 37%,transparent 38% 41%,rgba(37,186,255,.20) 42% 46%,transparent 47% 50%,rgba(37,186,255,.18) 51% 55%,transparent 56% 60%,rgba(255,138,61,.24) 61% 65%,transparent 66%),radial-gradient(circle at 36% 38%,#62f6b1 0 4px,transparent 5px),radial-gradient(circle at 44% 48%,#62f6b1 0 4px,transparent 5px),radial-gradient(circle at 54% 38%,#62f6b1 0 4px,transparent 5px),radial-gradient(circle at 63% 48%,#ff8a3d 0 4px,transparent 5px),linear-gradient(135deg,#0b1721,#050a0f)!important}.case:nth-child(3) .visual:after{content:'PLC / I-O STATUS · BUS · ALARMS';display:flex;align-items:flex-end;justify-content:flex-start;padding:12px;color:#25baff;font:900 11px var(--mono);letter-spacing:.12em}.case .visual{box-shadow:inset 0 -80px 110px rgba(3,7,10,.34),inset 0 0 0 1px rgba(37,186,255,.08)}@keyframes caseScan{0%,42%{transform:translateX(-120%)}65%{transform:translateX(120%)}100%{transform:translateX(120%)}}
+  .portrait{position:relative!important;overflow:hidden!important;min-height:420px!important;background:#061017!important;border:1px solid rgba(139,198,235,.28)!important;box-shadow:0 28px 90px rgba(0,0,0,.42),inset 0 0 80px rgba(37,186,255,.08)!important}.portrait:before{content:''!important;position:absolute;inset:0!important;background:linear-gradient(rgba(37,186,255,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(37,186,255,.08) 1px,transparent 1px),radial-gradient(circle at 60% 42%,rgba(37,186,255,.22),transparent 34%),linear-gradient(135deg,#08131d,#03070a)!important;background-size:34px 34px,34px 34px,auto,auto!important;color:transparent!important;animation:videoGrid 7s linear infinite!important}.portrait:after{content:'LIVE CELL FEED\\A PLC · ROBOT · VISION';white-space:pre;position:absolute;left:22px;bottom:22px;right:22px;z-index:4;color:#25baff;font:900 12px var(--mono);letter-spacing:.14em;line-height:1.8;padding-top:14px;border-top:1px solid rgba(37,186,255,.35);text-shadow:0 0 18px rgba(37,186,255,.55)}.portrait .motion-panel{position:absolute;inset:0;z-index:2;pointer-events:none}.portrait .motion-panel:before{content:'';position:absolute;left:12%;right:12%;bottom:18%;height:58px;border:1px solid rgba(139,198,235,.32);background:repeating-linear-gradient(90deg,rgba(255,255,255,.10) 0 1px,transparent 1px 28px),linear-gradient(90deg,rgba(255,138,61,.16),rgba(37,186,255,.12));box-shadow:0 22px 70px rgba(0,0,0,.55)}.portrait .motion-panel:after{content:'';position:absolute;inset:0;background:linear-gradient(110deg,transparent 0 43%,rgba(37,186,255,.28) 48%,transparent 55%);transform:translateX(-120%);animation:videoScan 3.9s ease-in-out infinite;mix-blend-mode:screen}.portrait .robot-video{position:absolute;left:9%;top:12%;width:82%;height:70%;z-index:3;filter:drop-shadow(0 0 28px rgba(37,186,255,.28))}.portrait .rv-arm{transform-origin:420px 330px;animation:rvArm 6s ease-in-out infinite}.portrait .rv-tool{transform-origin:265px 330px;animation:rvTool 3.5s ease-in-out infinite}.portrait .rv-led{animation:rvLed 1.2s ease-in-out infinite}@keyframes videoGrid{to{background-position:34px 34px,34px 34px,center,center}}@keyframes videoScan{0%,45%{transform:translateX(-120%)}70%,100%{transform:translateX(120%)}}@keyframes rvArm{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(7deg)}}@keyframes rvTool{0%,100%{transform:rotate(4deg)}50%{transform:rotate(-9deg)}}@keyframes rvLed{0%,100%{opacity:.35}50%{opacity:1}}@media(max-width:980px){.portrait{min-height:340px!important}}
   `;
   document.head.appendChild(st);
 })();
