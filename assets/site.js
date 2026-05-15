@@ -2,27 +2,72 @@ const topbar=document.querySelector('.topbar');
 const nav=document.querySelector('.nav');
 const menu=document.querySelector('.menu');
 const year=document.querySelector('[data-year]');
-if(year)year.textContent=new Date().getFullYear();
-const onScroll=()=>topbar&&topbar.classList.toggle('scrolled',scrollY>24);
-onScroll();
-addEventListener('scroll',onScroll,{passive:true});
-menu?.addEventListener('click',()=>{const open=!nav.classList.contains('open');nav.classList.toggle('open',open);menu.setAttribute('aria-expanded',String(open));});
-nav?.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{nav.classList.remove('open');menu?.setAttribute('aria-expanded','false');}));
-const io=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('show');io.unobserve(entry.target);}}),{threshold:.13});
-document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
-const sections=[...document.querySelectorAll('section[id]')];
-const navLinks=[...document.querySelectorAll('.nav a')];
-addEventListener('scroll',()=>{let current='';sections.forEach(section=>{if(scrollY>=section.offsetTop-160)current=section.id;});navLinks.forEach(link=>link.classList.toggle('active',link.getAttribute('href')==='#'+current));},{passive:true});
 
-(()=>{
-  const phone='+46790783238';
-  document.querySelectorAll('a[href^="tel:"]').forEach(a=>{a.href='tel:'+phone;const strong=a.querySelector('strong');if(strong)strong.textContent=phone;});
-  document.querySelectorAll('strong,span,p,a').forEach(el=>{if(el.textContent){el.textContent=el.textContent.replace('+46 76 032 69 24',phone).replace('0790 78 32 38',phone).replace('+46760326924',phone);}});
+if(year) year.textContent = new Date().getFullYear();
+
+const onScroll = () => topbar && topbar.classList.toggle('scrolled', scrollY > 24);
+onScroll();
+addEventListener('scroll', onScroll, { passive: true });
+
+menu?.addEventListener('click', () => {
+  const open = !nav.classList.contains('open');
+  nav.classList.toggle('open', open);
+  menu.setAttribute('aria-expanded', String(open));
+});
+
+nav?.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+  nav.classList.remove('open');
+  menu?.setAttribute('aria-expanded', 'false');
+}));
+
+const io = new IntersectionObserver(entries => entries.forEach(entry => {
+  if(entry.isIntersecting){
+    entry.target.classList.add('show');
+    io.unobserve(entry.target);
+  }
+}), { threshold: .13 });
+
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+const sections = [...document.querySelectorAll('section[id]')];
+const navLinks = [...document.querySelectorAll('.nav a')];
+addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(section => { if(scrollY >= section.offsetTop - 160) current = section.id; });
+  navLinks.forEach(link => link.classList.toggle('active', link.getAttribute('href') === '#' + current));
+}, { passive: true });
+
+// Contact details: keep markup intact and force the correct phone everywhere.
+(() => {
+  const email = 'ibbo.abdoli@gmail.com';
+  const phone = '+46790783238';
+  const linkedin = 'https://www.linkedin.com/in/ibbo-abdoli/';
+
+  document.querySelectorAll('.contact-list').forEach(list => {
+    list.innerHTML = `
+      <a href="mailto:${email}"><span>Email:</span><strong>${email}</strong></a>
+      <a href="tel:${phone}"><span>Phone:</span><strong>${phone}</strong></a>
+      <a href="${linkedin}" target="_blank" rel="noopener"><span>LinkedIn:</span><strong>Open profile</strong></a>
+      <span><span>Location:</span><strong>Stockholm, Sweden</strong></span>
+    `;
+  });
+
+  document.querySelectorAll('a[href^="tel:"]').forEach(a => {
+    a.href = 'tel:' + phone;
+    const strong = a.querySelector('strong');
+    if(strong) strong.textContent = phone;
+  });
 })();
 
-(()=>{
-  const st=document.createElement('style');
-  st.textContent=`
+// Case card technical visuals.
+(() => {
+  const st = document.createElement('style');
+  st.textContent = `
+  .contact-list a,.contact-list>span{display:flex!important;justify-content:space-between!important;align-items:center!important;gap:16px!important;border-bottom:1px solid var(--line)!important;padding:0 0 12px!important;line-height:1.4!important}
+  .contact-list span{color:var(--muted)!important}
+  .contact-list strong{color:var(--text)!important;text-align:right!important}
+  @media(max-width:560px){.contact-list a,.contact-list>span{display:grid!important;grid-template-columns:1fr!important;gap:6px!important}.contact-list strong{text-align:left!important}}
+
   .case .visual{height:190px!important;position:relative;overflow:hidden;background:#071019!important;isolation:isolate;border-bottom:1px solid rgba(139,198,235,.18)}
   .case .visual:before{content:'';position:absolute;inset:0;z-index:3;background:linear-gradient(110deg,transparent 0 42%,rgba(37,186,255,.28) 48%,transparent 56%);transform:translateX(-120%);animation:caseScan 4.6s ease-in-out infinite}
   .case .visual:after{content:'';position:absolute;inset:18px;z-index:2;border:1px solid rgba(37,186,255,.22);box-shadow:inset 0 0 42px rgba(37,186,255,.10),0 0 34px rgba(37,186,255,.12)}
@@ -38,9 +83,10 @@ addEventListener('scroll',()=>{let current='';sections.forEach(section=>{if(scro
   document.head.appendChild(st);
 })();
 
-(()=>{
-  const st=document.createElement('style');
-  st.textContent=`
+// Replace portrait photo with a lightweight industrial motion panel.
+(() => {
+  const st = document.createElement('style');
+  st.textContent = `
   .portrait{position:relative!important;overflow:hidden!important;min-height:420px!important;background:#061017!important;border:1px solid rgba(139,198,235,.28)!important;box-shadow:0 28px 90px rgba(0,0,0,.42),inset 0 0 80px rgba(37,186,255,.08)!important}
   .portrait:before{content:''!important;position:absolute;inset:0!important;background:linear-gradient(rgba(37,186,255,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(37,186,255,.08) 1px,transparent 1px),radial-gradient(circle at 60% 42%,rgba(37,186,255,.22),transparent 34%),linear-gradient(135deg,#08131d,#03070a)!important;background-size:34px 34px,34px 34px,auto,auto!important;color:transparent!important;animation:videoGrid 7s linear infinite!important}
   .portrait:after{content:'LIVE CELL FEED\\A PLC · ROBOT · VISION';white-space:pre;position:absolute;left:22px;bottom:22px;right:22px;z-index:4;color:#25baff;font:900 12px var(--mono);letter-spacing:.14em;line-height:1.8;padding-top:14px;border-top:1px solid rgba(37,186,255,.35);text-shadow:0 0 18px rgba(37,186,255,.55)}
@@ -59,11 +105,19 @@ addEventListener('scroll',()=>{let current='';sections.forEach(section=>{if(scro
   @media(max-width:980px){.portrait{min-height:340px!important}}
   `;
   document.head.appendChild(st);
-  document.querySelectorAll('.portrait').forEach(p=>{
+  document.querySelectorAll('.portrait').forEach(p => {
     p.classList.remove('has-photo');
-    p.innerHTML=`<div class="motion-panel"></div><svg class="robot-video" viewBox="0 0 720 520" aria-hidden="true"><g opacity=".22" stroke="#25baff"><path d="M70 430H650M110 370H610M150 310H570"/><path d="M140 70v390M280 50v410M420 60v400M560 80v380"/></g><g class="rv-arm"><circle cx="455" cy="390" r="62" fill="#101821" stroke="#dce8ef" stroke-width="8"/><path d="M420 342 C390 272 350 210 295 160" fill="none" stroke="#dce8ef" stroke-width="46" stroke-linecap="round"/><circle cx="295" cy="160" r="36" fill="#dce8ef" stroke="#6d7d88" stroke-width="7"/><path d="M265 170 C210 178 170 220 142 270" fill="none" stroke="#9eb0bd" stroke-width="40" stroke-linecap="round"/><circle cx="142" cy="270" r="31" fill="#dce8ef" stroke="#6d7d88" stroke-width="6"/><g class="rv-tool"><path d="M142 270 L105 330" stroke="#dce8ef" stroke-width="18" stroke-linecap="round"/><circle cx="98" cy="342" r="8" fill="#ff8a3d"/></g></g><g class="rv-led"><circle cx="580" cy="160" r="7" fill="#62f6b1"/><circle cx="610" cy="190" r="7" fill="#62f6b1"/><circle cx="580" cy="220" r="7" fill="#ff8a3d"/><path d="M530 150h100v90H530z" fill="none" stroke="#25baff" stroke-width="3" opacity=".7"/></g><text x="44" y="62" fill="#25baff" font-family="monospace" font-size="19" font-weight="900">AUTOMATION DIAGNOSTICS</text></svg>`;
+    p.innerHTML = `<div class="motion-panel"></div><svg class="robot-video" viewBox="0 0 720 520" aria-hidden="true"><g opacity=".22" stroke="#25baff"><path d="M70 430H650M110 370H610M150 310H570"/><path d="M140 70v390M280 50v410M420 60v400M560 80v380"/></g><g class="rv-arm"><circle cx="455" cy="390" r="62" fill="#101821" stroke="#dce8ef" stroke-width="8"/><path d="M420 342 C390 272 350 210 295 160" fill="none" stroke="#dce8ef" stroke-width="46" stroke-linecap="round"/><circle cx="295" cy="160" r="36" fill="#dce8ef" stroke="#6d7d88" stroke-width="7"/><path d="M265 170 C210 178 170 220 142 270" fill="none" stroke="#9eb0bd" stroke-width="40" stroke-linecap="round"/><circle cx="142" cy="270" r="31" fill="#dce8ef" stroke="#6d7d88" stroke-width="6"/><g class="rv-tool"><path d="M142 270 L105 330" stroke="#dce8ef" stroke-width="18" stroke-linecap="round"/><circle cx="98" cy="342" r="8" fill="#ff8a3d"/></g></g><g class="rv-led"><circle cx="580" cy="160" r="7" fill="#62f6b1"/><circle cx="610" cy="190" r="7" fill="#62f6b1"/><circle cx="580" cy="220" r="7" fill="#ff8a3d"/><path d="M530 150h100v90H530z" fill="none" stroke="#25baff" stroke-width="3" opacity=".7"/></g><text x="44" y="62" fill="#25baff" font-family="monospace" font-size="19" font-weight="900">AUTOMATION DIAGNOSTICS</text></svg>`;
   });
 })();
 
-var Tawk_API=Tawk_API||{},Tawk_LoadStart=new Date();
-(()=>{var s1=document.createElement('script'),s0=document.getElementsByTagName('script')[0];s1.async=true;s1.src='https://embed.tawk.to/6895ddde56ddd81926b30080/1j24mlbt5';s1.charset='UTF-8';s1.setAttribute('crossorigin','*');s0.parentNode.insertBefore(s1,s0);})();
+var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
+(() => {
+  const s1 = document.createElement('script');
+  const s0 = document.getElementsByTagName('script')[0];
+  s1.async = true;
+  s1.src = 'https://embed.tawk.to/6895ddde56ddd81926b30080/1j24mlbt5';
+  s1.charset = 'UTF-8';
+  s1.setAttribute('crossorigin','*');
+  s0.parentNode.insertBefore(s1,s0);
+})();
