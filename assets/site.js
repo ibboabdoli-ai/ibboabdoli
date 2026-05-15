@@ -3,66 +3,53 @@ const nav=document.querySelector('.nav');
 const menu=document.querySelector('.menu');
 const year=document.querySelector('[data-year]');
 
-if (year) year.textContent = new Date().getFullYear();
+if(year) year.textContent = new Date().getFullYear();
 
-const onScroll = () => topbar && topbar.classList.toggle('scrolled', scrollY > 24);
+const onScroll=()=>topbar&&topbar.classList.toggle('scrolled',scrollY>24);
 onScroll();
-addEventListener('scroll', onScroll, { passive: true });
+addEventListener('scroll',onScroll,{passive:true});
 
-menu?.addEventListener('click', () => {
-  const open = !nav.classList.contains('open');
-  nav.classList.toggle('open', open);
-  menu.setAttribute('aria-expanded', String(open));
+menu?.addEventListener('click',()=>{
+  const open=!nav.classList.contains('open');
+  nav.classList.toggle('open',open);
+  menu.setAttribute('aria-expanded',String(open));
 });
 
-nav?.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+nav?.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{
   nav.classList.remove('open');
-  menu?.setAttribute('aria-expanded', 'false');
+  menu?.setAttribute('aria-expanded','false');
 }));
 
-const revealObserver = new IntersectionObserver(entries => entries.forEach(entry => {
-  if (entry.isIntersecting) {
-    entry.target.classList.add('show');
-    revealObserver.unobserve(entry.target);
-  }
-}), { threshold: .13 });
+const revealObserver=new IntersectionObserver(entries=>entries.forEach(entry=>{
+  if(entry.isIntersecting){entry.target.classList.add('show');revealObserver.unobserve(entry.target);}
+}),{threshold:.13});
+document.querySelectorAll('.reveal').forEach(el=>revealObserver.observe(el));
 
-document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+const sections=[...document.querySelectorAll('section[id]')];
+const navLinks=[...document.querySelectorAll('.nav a')];
+addEventListener('scroll',()=>{
+  let current='';
+  sections.forEach(section=>{if(scrollY>=section.offsetTop-160)current=section.id;});
+  navLinks.forEach(link=>link.classList.toggle('active',link.getAttribute('href')==='#'+current));
+},{passive:true});
 
-const sections = [...document.querySelectorAll('section[id]')];
-const navLinks = [...document.querySelectorAll('.nav a')];
-addEventListener('scroll', () => {
-  let current = '';
-  sections.forEach(section => {
-    if (scrollY >= section.offsetTop - 160) current = section.id;
-  });
-  navLinks.forEach(link => link.classList.toggle('active', link.getAttribute('href') === '#' + current));
-}, { passive: true });
-
-(() => {
-  const email = 'ibbo.abdoli@gmail.com';
-  const phone = '+46790783238';
-  const linkedin = 'https://www.linkedin.com/in/ibbo-abdoli/';
-
-  document.querySelectorAll('.contact-list').forEach(list => {
-    list.innerHTML = `
+// Contact details: phone number removed from the entire visible website.
+(()=>{
+  const email='ibbo.abdoli@gmail.com';
+  const linkedin='https://www.linkedin.com/in/ibbo-abdoli/';
+  document.querySelectorAll('.contact-list').forEach(list=>{
+    list.innerHTML=`
       <a href="mailto:${email}"><span>Email:</span><strong>${email}</strong></a>
-      <a href="tel:${phone}"><span>Phone:</span><strong>${phone}</strong></a>
       <a href="${linkedin}" target="_blank" rel="noopener"><span>LinkedIn:</span><strong>Open profile</strong></a>
       <span><span>Location:</span><strong>Stockholm, Sweden</strong></span>
     `;
   });
-
-  document.querySelectorAll('a[href^="tel:"]').forEach(a => {
-    a.href = 'tel:' + phone;
-    const strong = a.querySelector('strong');
-    if (strong) strong.textContent = phone;
-  });
+  document.querySelectorAll('a[href^="tel:"]').forEach(a=>a.remove());
 })();
 
-(() => {
-  const st = document.createElement('style');
-  st.textContent = `
+(()=>{
+  const st=document.createElement('style');
+  st.textContent=`
   @media(max-width:640px){
     .topbar{height:72px!important;padding:0 14px!important;gap:8px!important}
     .brand{gap:8px!important;min-width:0!important;max-width:42vw!important;overflow:hidden!important}
@@ -75,15 +62,10 @@ addEventListener('scroll', () => {
     .menu{height:36px!important;padding:0 12px!important;font-size:11px!important}
     .hero{padding-top:72px!important}
   }
-
   .contact-list a,.contact-list>span{display:flex!important;justify-content:space-between!important;align-items:center!important;gap:18px!important;border-bottom:1px solid var(--line)!important;padding:0 0 14px!important;line-height:1.45!important}
   .contact-list span{color:var(--muted)!important;min-width:max-content!important}
   .contact-list strong{color:var(--text)!important;text-align:right!important;word-break:break-word!important}
-  @media(max-width:560px){
-    .contact-list{gap:16px!important}
-    .contact-list a,.contact-list>span{display:grid!important;grid-template-columns:1fr!important;gap:6px!important;align-items:start!important}
-    .contact-list strong{text-align:left!important}
-  }
+  @media(max-width:560px){.contact-list{gap:16px!important}.contact-list a,.contact-list>span{display:grid!important;grid-template-columns:1fr!important;gap:6px!important;align-items:start!important}.contact-list strong{text-align:left!important}}
 
   .case .visual{height:190px!important;position:relative;overflow:hidden;background:#071019!important;isolation:isolate;border-bottom:1px solid rgba(139,198,235,.18)}
   .case .visual:before{content:'';position:absolute;inset:0;z-index:3;background:linear-gradient(110deg,transparent 0 42%,rgba(37,186,255,.28) 48%,transparent 56%);transform:translateX(-120%);animation:caseScan 4.6s ease-in-out infinite}
@@ -117,27 +99,14 @@ addEventListener('scroll', () => {
   document.head.appendChild(st);
 })();
 
-(() => {
-  document.querySelectorAll('.portrait').forEach(p => {
+(()=>{
+  document.querySelectorAll('.portrait').forEach(p=>{
     p.classList.remove('has-photo');
-    p.innerHTML = `<div class="motion-panel"></div><svg class="robot-video" viewBox="0 0 720 520" aria-hidden="true"><g opacity=".22" stroke="#25baff"><path d="M70 430H650M110 370H610M150 310H570"/><path d="M140 70v390M280 50v410M420 60v400M560 80v380"/></g><g class="rv-arm"><circle cx="455" cy="390" r="62" fill="#101821" stroke="#dce8ef" stroke-width="8"/><path d="M420 342 C390 272 350 210 295 160" fill="none" stroke="#dce8ef" stroke-width="46" stroke-linecap="round"/><circle cx="295" cy="160" r="36" fill="#dce8ef" stroke="#6d7d88" stroke-width="7"/><path d="M265 170 C210 178 170 220 142 270" fill="none" stroke="#9eb0bd" stroke-width="40" stroke-linecap="round"/><circle cx="142" cy="270" r="31" fill="#dce8ef" stroke="#6d7d88" stroke-width="6"/><g class="rv-tool"><path d="M142 270 L105 330" stroke="#dce8ef" stroke-width="18" stroke-linecap="round"/><circle cx="98" cy="342" r="8" fill="#ff8a3d"/></g></g><g class="rv-led"><circle cx="580" cy="160" r="7" fill="#62f6b1"/><circle cx="610" cy="190" r="7" fill="#62f6b1"/><circle cx="580" cy="220" r="7" fill="#ff8a3d"/><path d="M530 150h100v90H530z" fill="none" stroke="#25baff" stroke-width="3" opacity=".7"/></g><text x="44" y="62" fill="#25baff" font-family="monospace" font-size="19" font-weight="900">AUTOMATION DIAGNOSTICS</text></svg>`;
+    p.innerHTML=`<div class="motion-panel"></div><svg class="robot-video" viewBox="0 0 720 520" aria-hidden="true"><g opacity=".22" stroke="#25baff"><path d="M70 430H650M110 370H610M150 310H570"/><path d="M140 70v390M280 50v410M420 60v400M560 80v380"/></g><g class="rv-arm"><circle cx="455" cy="390" r="62" fill="#101821" stroke="#dce8ef" stroke-width="8"/><path d="M420 342 C390 272 350 210 295 160" fill="none" stroke="#dce8ef" stroke-width="46" stroke-linecap="round"/><circle cx="295" cy="160" r="36" fill="#dce8ef" stroke="#6d7d88" stroke-width="7"/><path d="M265 170 C210 178 170 220 142 270" fill="none" stroke="#9eb0bd" stroke-width="40" stroke-linecap="round"/><circle cx="142" cy="270" r="31" fill="#dce8ef" stroke="#6d7d88" stroke-width="6"/><g class="rv-tool"><path d="M142 270 L105 330" stroke="#dce8ef" stroke-width="18" stroke-linecap="round"/><circle cx="98" cy="342" r="8" fill="#ff8a3d"/></g></g><g class="rv-led"><circle cx="580" cy="160" r="7" fill="#62f6b1"/><circle cx="610" cy="190" r="7" fill="#62f6b1"/><circle cx="580" cy="220" r="7" fill="#ff8a3d"/><path d="M530 150h100v90H530z" fill="none" stroke="#25baff" stroke-width="3" opacity=".7"/></g><text x="44" y="62" fill="#25baff" font-family="monospace" font-size="19" font-weight="900">AUTOMATION DIAGNOSTICS</text></svg>`;
   });
 })();
 
-var Tawk_API = Tawk_API || {};
-Tawk_API.customStyle = {
-  visibility: {
-    desktop: { position: 'br', xOffset: '20px', yOffset: '20px' },
-    mobile: { position: 'br', xOffset: '15px', yOffset: '86px' }
-  }
-};
-var Tawk_LoadStart = new Date();
-(() => {
-  const s1 = document.createElement('script');
-  const s0 = document.getElementsByTagName('script')[0];
-  s1.async = true;
-  s1.src = 'https://embed.tawk.to/6895ddde56ddd81926b30080/1j24mlbt5';
-  s1.charset = 'UTF-8';
-  s1.setAttribute('crossorigin', '*');
-  s0.parentNode.insertBefore(s1, s0);
-})();
+var Tawk_API=Tawk_API||{};
+Tawk_API.customStyle={visibility:{desktop:{position:'br',xOffset:'20px',yOffset:'20px'},mobile:{position:'br',xOffset:'15px',yOffset:'86px'}}};
+var Tawk_LoadStart=new Date();
+(()=>{const s1=document.createElement('script');const s0=document.getElementsByTagName('script')[0];s1.async=true;s1.src='https://embed.tawk.to/6895ddde56ddd81926b30080/1j24mlbt5';s1.charset='UTF-8';s1.setAttribute('crossorigin','*');s0.parentNode.insertBefore(s1,s0);})();
