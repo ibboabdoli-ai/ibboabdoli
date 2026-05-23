@@ -1,0 +1,171 @@
+name: Generate PNG social images
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/generate-social-images.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  generate-images:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate PNG Open Graph image and favicon assets
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import subprocess, sys
+
+          try:
+              from PIL import Image, ImageDraw, ImageFont
+          except Exception:
+              subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'pillow'])
+              from PIL import Image, ImageDraw, ImageFont
+
+          def font(size, bold=False):
+              candidates = [
+                  '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf' if bold else '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+                  '/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf' if bold else '/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf',
+              ]
+              for c in candidates:
+                  if Path(c).exists():
+                      return ImageFont.truetype(c, size)
+              return ImageFont.load_default()
+
+          def rounded_rect(draw, box, radius, fill, outline=None, width=1):
+              draw.rounded_rectangle(box, radius=radius, fill=fill, outline=outline, width=width)
+
+          W, H = 1200, 630
+          bg = Image.new('RGB', (W, H), '#03070a')
+          d = ImageDraw.Draw(bg)
+
+          # grid
+          for x in range(0, W, 36):
+              d.line([(x, 0), (x, H)], fill=(37, 186, 255, 22), width=1)
+          for y in range(0, H, 36):
+              d.line([(0, y), (W, y)], fill=(37, 186, 255, 22), width=1)
+
+          # soft radial-like glow using transparent circles
+          overlay = Image.new('RGBA', (W, H), (0,0,0,0))
+          od = ImageDraw.Draw(overlay)
+          for r, a in [(420, 35), (300, 45), (180, 55)]:
+              od.ellipse((790-r, 120-r, 790+r, 120+r), fill=(37,186,255,a))
+          for r, a in [(310, 32), (210, 44), (130, 54)]:
+              od.ellipse((190-r, 520-r, 190+r, 520+r), fill=(255,138,61,a))
+          bg = Image.alpha_composite(bg.convert('RGBA'), overlay)
+          d = ImageDraw.Draw(bg)
+
+          rounded_rect(d, (70, 65, 1130, 565), 26, fill=(5,13,19,230), outline=(37,186,255,120), width=2)
+          rounded_rect(d, (112, 126, 332, 346), 38, fill=(6,16,23,255), outline=(37,186,255,255), width=6)
+          d.ellipse((281,139,305,163), fill=(255,138,61,255))
+          d.text((222, 220), 'IA', anchor='mm', font=font(82, True), fill='#f4f8fb')
+          d.text((222, 302), 'INDUSTRIAL', anchor='mm', font=font(16, True), fill='#9eb0bd')
+          d.line((380, 130, 380, 500), fill=(139,198,235,80), width=2)
+
+          d.text((430, 142), 'IBBO ABDOLI', font=font(72, True), fill='#f4f8fb')
+          d.text((430, 226), 'Service Engineer / Automation Technician', font=font(34, True), fill='#25baff')
+          d.text((430, 306), 'Industrial automation · PLC/I/O diagnostics · ABB robots', font=font(28, False), fill='#c2d0db')
+          d.text((430, 350), 'RobotStudio · Machine vision · EAVS · Cognex', font=font(28, False), fill='#c2d0db')
+
+          tags = [('PLC/I-O',112), ('ABB ROBOTS',150), ('VISION',104), ('TROUBLESHOOTING',218)]
+          x = 430
+          for text, w in tags:
+              rounded_rect(d, (x, 420, x+w, 466), 8, fill=(37,186,255,35), outline=(139,198,235,110), width=1)
+              d.text((x+w/2, 443), text, anchor='mm', font=font(18, True), fill='#f4f8fb')
+              x += w + 18
+          d.text((430, 514), 'ibboabdoli.com · cal.com/ibboabdoli', font=font(24, True), fill='#ff8a3d')
+
+          bg.convert('RGB').save('og-image.png', 'PNG', optimize=True)
+
+          def make_icon(size, path):
+              img = Image.new('RGBA', (size, size), '#061017')
+              dr = ImageDraw.Draw(img)
+              margin = max(3, size//7)
+              radius = max(6, size//5)
+              dr.rounded_rectangle((0,0,size-1,size-1), radius=radius, fill='#061017')
+              dr.rounded_rectangle((margin, margin, size-margin, size-margin), radius=radius//2, outline='#25baff', width=max(2, size//18))
+              dr.ellipse((int(size*.76), int(size*.15), int(size*.86), int(size*.25)), fill='#ff8a3d')
+              dr.text((size//2, int(size*.54)), 'IA', anchor='mm', font=font(int(size*.38), True), fill='#f4f8fb')
+              img.save(path, 'PNG', optimize=True)
+
+          make_icon(48, 'favicon-48x48.png')
+          make_icon(192, 'icon-192.png')
+          make_icon(512, 'icon-512.png')
+          make_icon(180, 'apple-touch-icon.png')
+
+          # Also create a real .ico file for broad browser / Google compatibility.
+          icon = Image.open('icon-512.png')
+          icon.save('favicon.ico', sizes=[(16,16),(32,32),(48,48)])
+
+          # Patch HTML metadata to use PNG share image.
+          og_png = 'https://www.ibboabdoli.com/og-image.png'
+          files = [Path('index.html'), Path('en/index.html'), Path('card/index.html')]
+          og_lines = (
+              f'<meta property="og:image" content="{og_png}">\n'
+              f'<meta property="og:image:secure_url" content="{og_png}">\n'
+              f'<meta property="og:image:type" content="image/png">\n'
+              f'<meta property="og:image:width" content="1200">\n'
+              f'<meta property="og:image:height" content="630">\n'
+              f'<meta property="og:image:alt" content="Ibbo Abdoli automation technician logo and profile card">'
+          )
+
+          for path in files:
+              if not path.exists():
+                  continue
+              text = path.read_text(encoding='utf-8')
+              # remove old og image lines if any
+              lines = []
+              for line in text.splitlines():
+                  if any(key in line for key in ['property="og:image"', 'property="og:image:secure_url"', 'property="og:image:type"', 'property="og:image:width"', 'property="og:image:height"', 'property="og:image:alt"', 'name="twitter:image"']):
+                      continue
+                  lines.append(line)
+              text = '\n'.join(lines) + '\n'
+              marker = '<meta property="og:url"'
+              pos = text.find(marker)
+              if pos != -1:
+                  end = text.find('\n', pos)
+                  text = text[:end+1] + og_lines + '\n' + text[end+1:]
+              text = text.replace('<meta name="twitter:card" content="summary">', '<meta name="twitter:card" content="summary_large_image">')
+              if '<meta name="twitter:card"' not in text:
+                  text = text.replace('</head>', '<meta name="twitter:card" content="summary_large_image">\n</head>')
+              marker = '<meta name="twitter:description"'
+              pos = text.find(marker)
+              if pos != -1:
+                  end = text.find('\n', pos)
+                  text = text[:end+1] + f'<meta name="twitter:image" content="{og_png}">\n' + text[end+1:]
+              else:
+                  text = text.replace('</head>', f'<meta name="twitter:image" content="{og_png}">\n</head>')
+
+              favicon_lines = (
+                  '<link rel="icon" href="/favicon.ico" sizes="any">\n'
+                  '<link rel="icon" href="/favicon-48x48.png" type="image/png" sizes="48x48">\n'
+                  '<link rel="icon" href="/favicon.svg" type="image/svg+xml">\n'
+                  '<link rel="apple-touch-icon" href="/apple-touch-icon.png">'
+              )
+              # remove old icon duplicates
+              lines = []
+              for line in text.splitlines():
+                  if any(key in line for key in ['rel="icon"', 'rel="shortcut icon"', 'rel="apple-touch-icon"']):
+                      continue
+                  lines.append(line)
+              text = '\n'.join(lines) + '\n'
+              marker = '<meta name="theme-color"'
+              pos = text.find(marker)
+              if pos != -1:
+                  end = text.find('\n', pos)
+                  text = text[:end+1] + favicon_lines + '\n' + text[end+1:]
+              path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Commit generated assets and metadata
+        run: |
+          git config user.name "ibboabdoli-ai"
+          git config user.email "ibbo.abdoli@gmail.com"
+          git add og-image.png favicon-48x48.png icon-192.png icon-512.png apple-touch-icon.png favicon.ico index.html en/index.html card/index.html
+          git commit -m "Use PNG Open Graph preview and favicon assets"
+          git push
