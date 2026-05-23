@@ -1,0 +1,98 @@
+name: Patch OG image metadata
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/patch-og-image.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-og-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Add OG image metadata
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          OG_IMAGE = 'https://www.ibboabdoli.com/og-image.svg'
+
+          def og_block(url):
+              return (
+                  f'<meta property="og:image" content="{OG_IMAGE}">\n'
+                  f'<meta property="og:image:secure_url" content="{OG_IMAGE}">\n'
+                  f'<meta property="og:image:type" content="image/svg+xml">\n'
+                  f'<meta property="og:image:width" content="1200">\n'
+                  f'<meta property="og:image:height" content="630">\n'
+                  f'<meta property="og:image:alt" content="Ibbo Abdoli automation technician logo and profile card">'
+              )
+
+          def twitter_block():
+              return f'<meta name="twitter:image" content="{OG_IMAGE}">'
+
+          files = [Path('index.html'), Path('en/index.html'), Path('card/index.html')]
+          changed = False
+
+          for path in files:
+              if not path.exists():
+                  continue
+              text = path.read_text(encoding='utf-8')
+              original = text
+
+              if 'property="og:image"' not in text:
+                  marker = '<meta property="og:url"'
+                  pos = text.find(marker)
+                  if pos != -1:
+                      end = text.find('\n', pos)
+                      if end != -1:
+                          text = text[:end+1] + og_block('') + '\n' + text[end+1:]
+
+              text = text.replace('<meta name="twitter:card" content="summary">', '<meta name="twitter:card" content="summary_large_image">')
+              if 'name="twitter:card"' not in text:
+                  marker = '<meta property="og:url"'
+                  pos = text.find(marker)
+                  if pos != -1:
+                      end = text.find('\n', pos)
+                      if end != -1:
+                          text = text[:end+1] + '<meta name="twitter:card" content="summary_large_image">\n' + text[end+1:]
+
+              if 'name="twitter:image"' not in text:
+                  marker = '<meta name="twitter:description"'
+                  pos = text.find(marker)
+                  if pos != -1:
+                      end = text.find('\n', pos)
+                      if end != -1:
+                          text = text[:end+1] + twitter_block() + '\n' + text[end+1:]
+                  else:
+                      marker = '</head>'
+                      text = text.replace(marker, twitter_block() + '\n' + marker)
+
+              if '<link rel="icon" href="/favicon.svg"' not in text:
+                  marker = '<meta name="theme-color"'
+                  pos = text.find(marker)
+                  if pos != -1:
+                      end = text.find('\n', pos)
+                      if end != -1:
+                          text = text[:end+1] + '<link rel="icon" href="/favicon.svg" type="image/svg+xml">\n<link rel="shortcut icon" href="/favicon.svg" type="image/svg+xml">\n' + text[end+1:]
+
+              if text != original:
+                  path.write_text(text, encoding='utf-8')
+                  changed = True
+
+          if not changed:
+              print('No changes needed')
+              raise SystemExit(0)
+          PY
+
+      - name: Commit changes
+        run: |
+          git config user.name "ibboabdoli-ai"
+          git config user.email "ibbo.abdoli@gmail.com"
+          git add index.html en/index.html card/index.html
+          git commit -m "Add Open Graph image metadata"
+          git push
