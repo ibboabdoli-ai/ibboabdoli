@@ -1,0 +1,67 @@
+name: Patch share preview metadata now
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/patch-share-preview-now.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch HTML share preview metadata
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          files = [Path('index.html'), Path('en/index.html'), Path('card/index.html')]
+
+          for path in files:
+              if not path.exists():
+                  print(f'skip missing {path}')
+                  continue
+
+              text = path.read_text(encoding='utf-8')
+
+              # Share preview: force PNG instead of SVG for WhatsApp, Telegram, Facebook, LinkedIn.
+              text = text.replace('https://www.ibboabdoli.com/og-image.svg', 'https://www.ibboabdoli.com/og-image.png')
+              text = text.replace('content="image/svg+xml"', 'content="image/png"')
+
+              # Replace old favicon-only setup with broad browser/search-engine compatible icons.
+              old_icon_1 = '<link rel="icon" href="/favicon.svg" type="image/svg+xml">\n<link rel="shortcut icon" href="/favicon.svg" type="image/svg+xml">'
+              new_icons = '<link rel="icon" href="/favicon.ico" sizes="any">\n<link rel="icon" href="/favicon-48x48.png" type="image/png" sizes="48x48">\n<link rel="icon" href="/favicon.svg" type="image/svg+xml">\n<link rel="apple-touch-icon" href="/apple-touch-icon.png">'
+              text = text.replace(old_icon_1, new_icons)
+
+              # card/index.html is compact and may not yet include og:image tags. Add them after og:url.
+              if 'property="og:image"' not in text:
+                  marker = '<meta property="og:url" content="https://ibboabdoli.com/card/">'
+                  insert = marker + '<meta property="og:image" content="https://www.ibboabdoli.com/og-image.png"><meta property="og:image:secure_url" content="https://www.ibboabdoli.com/og-image.png"><meta property="og:image:type" content="image/png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Ibbo Abdoli automation technician logo and profile card"><meta name="twitter:card" content="summary_large_image">'
+                  text = text.replace(marker, insert)
+
+              # Ensure twitter image also uses PNG. If it does not exist, add before </head>.
+              if 'name="twitter:image"' not in text:
+                  text = text.replace('</head>', '<meta name="twitter:image" content="https://www.ibboabdoli.com/og-image.png">\n</head>')
+              else:
+                  text = text.replace('content="https://www.ibboabdoli.com/og-image.svg"', 'content="https://www.ibboabdoli.com/og-image.png"')
+
+              path.write_text(text, encoding='utf-8')
+              print(f'patched {path}')
+          PY
+
+      - name: Commit patched metadata
+        run: |
+          if git diff --quiet; then
+            echo "No changes needed"
+            exit 0
+          fi
+          git config user.name "ibboabdoli-ai"
+          git config user.email "ibbo.abdoli@gmail.com"
+          git add index.html en/index.html card/index.html
+          git commit -m "Use PNG share preview and favicon metadata"
+          git push
