@@ -82,6 +82,31 @@ addEventListener('scroll',()=>{
   });
 })();
 
+// Keep the existing form layout, but replace the broken Formspree endpoint at runtime.
+(()=>{
+  document.querySelectorAll('form.panel').forEach(form=>{
+    if(form.getAttribute('action')==='https://formspree.io/f/xqapdadv'){
+      form.setAttribute('action','https://formsubmit.co/ibbo.abdoli@gmail.com');
+      form.setAttribute('method','POST');
+      const hiddenFields={
+        _subject:'New message from ibboabdoli.com',
+        _template:'table',
+        _captcha:'false',
+        _next:'https://ibboabdoli.com/#contact'
+      };
+      Object.entries(hiddenFields).forEach(([name,value])=>{
+        if(!form.querySelector(`input[name="${name}"]`)){
+          const input=document.createElement('input');
+          input.type='hidden';
+          input.name=name;
+          input.value=value;
+          form.prepend(input);
+        }
+      });
+    }
+  });
+})();
+
 var Tawk_API=Tawk_API||{};
 Tawk_API.customStyle={visibility:{desktop:{position:'br',xOffset:'20px',yOffset:'20px'},mobile:{position:'br',xOffset:'15px',yOffset:'86px'}}};
 var Tawk_LoadStart=new Date();
