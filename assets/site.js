@@ -82,6 +82,21 @@ addEventListener('scroll',()=>{
   });
 })();
 
+// Replace old CV request button with direct downloadable CV files.
+(()=>{
+  const svCv='/assets/cv/Ibbo_Abdoli_CV_2026_SV_Final.pdf';
+  const enCv='/assets/cv/Ibbo_Abdoli_CV_2026_EN_Final.pdf';
+  document.querySelectorAll('a[href="mailto:ibbo.abdoli@gmail.com?subject=CV request"]').forEach(link=>{
+    const container=link.parentElement;
+    if(!container || container.querySelector('[data-cv-download]')) return;
+    link.remove();
+    container.insertAdjacentHTML('beforeend',`
+      <a class="btn" data-cv-download href="${svCv}" target="_blank" rel="noopener" download>Download CV · Svenska</a>
+      <a class="btn" data-cv-download href="${enCv}" target="_blank" rel="noopener" download>Download CV · English</a>
+    `);
+  });
+})();
+
 // Keep the existing form layout, but replace the broken Formspree endpoint at runtime.
 (()=>{
   document.querySelectorAll('form.panel').forEach(form=>{
