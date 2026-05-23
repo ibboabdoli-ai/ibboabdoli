@@ -1,6 +1,7 @@
 name: Generate PNG social images
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
@@ -44,13 +45,11 @@ jobs:
           bg = Image.new('RGB', (W, H), '#03070a')
           d = ImageDraw.Draw(bg)
 
-          # grid
           for x in range(0, W, 36):
               d.line([(x, 0), (x, H)], fill=(37, 186, 255, 22), width=1)
           for y in range(0, H, 36):
               d.line([(0, y), (W, y)], fill=(37, 186, 255, 22), width=1)
 
-          # soft radial-like glow using transparent circles
           overlay = Image.new('RGBA', (W, H), (0,0,0,0))
           od = ImageDraw.Draw(overlay)
           for r, a in [(420, 35), (300, 45), (180, 55)]:
@@ -97,12 +96,9 @@ jobs:
           make_icon(192, 'icon-192.png')
           make_icon(512, 'icon-512.png')
           make_icon(180, 'apple-touch-icon.png')
-
-          # Also create a real .ico file for broad browser / Google compatibility.
           icon = Image.open('icon-512.png')
           icon.save('favicon.ico', sizes=[(16,16),(32,32),(48,48)])
 
-          # Patch HTML metadata to use PNG share image.
           og_png = 'https://www.ibboabdoli.com/og-image.png'
           files = [Path('index.html'), Path('en/index.html'), Path('card/index.html')]
           og_lines = (
@@ -118,7 +114,6 @@ jobs:
               if not path.exists():
                   continue
               text = path.read_text(encoding='utf-8')
-              # remove old og image lines if any
               lines = []
               for line in text.splitlines():
                   if any(key in line for key in ['property="og:image"', 'property="og:image:secure_url"', 'property="og:image:type"', 'property="og:image:width"', 'property="og:image:height"', 'property="og:image:alt"', 'name="twitter:image"']):
@@ -147,7 +142,6 @@ jobs:
                   '<link rel="icon" href="/favicon.svg" type="image/svg+xml">\n'
                   '<link rel="apple-touch-icon" href="/apple-touch-icon.png">'
               )
-              # remove old icon duplicates
               lines = []
               for line in text.splitlines():
                   if any(key in line for key in ['rel="icon"', 'rel="shortcut icon"', 'rel="apple-touch-icon"']):
