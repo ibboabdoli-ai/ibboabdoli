@@ -39,3 +39,6 @@ The CSP permits same-origin scripts, approved external fonts and the existing Fo
 ## Release and rollback
 
 Test in a branch and merge only a verified head. Previous production baseline: `efde06f62994f96a3e555662b8bafbad7692809d` (2026-09-17). Use a Git revert PR for code rollback or Vercel's previous production deployment for immediate hosting rollback. Do not force-push `main`.
+
+## Layout stability
+The small same-origin init.js runs before styles to prevent the no-JavaScript navigation layout flashing before enhancement. The full behaviour script remains deferred. Google Fonts uses display=optional: slow first visits keep system fallback fonts rather than shifting late. No-JavaScript navigation remains tested.
