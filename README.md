@@ -30,7 +30,7 @@ The permanent `Portfolio quality` workflow has read-only repository permissions 
 
 ## Contact, privacy and external services
 
-The form uses the existing Formspree endpoint. Native form POST works without JavaScript; enhanced submission keeps feedback on the site and retains text when delivery cannot be confirmed. Booking links use the existing Cal.com events. The existing Gmail address remains unchanged; no new domain mailbox has been provisioned. Google Fonts remains an external font request and is described in the privacy information. No analytics SDK or marketing cookies were added.
+The form uses the existing Formspree endpoint. Native form POST works without JavaScript; enhanced submission keeps feedback on the site and retains text when delivery cannot be confirmed. Booking links use the existing Cal.com events. The existing Gmail address remains unchanged; no new domain mailbox has been provisioned. Google Fonts remains an external font request. Tawk.to live chat is restored with a delayed external loader and is disclosed in the privacy information. Tawk.to can use cookies/local storage and can monitor visitor sessions while the widget is active; for Sweden/EU, review and enable the Tawk.to Consent Form for European visitors in the Tawk dashboard. The automated website tests mock Tawk and therefore do not verify that dashboard-level consent setting. The Formspree contact-form warning reported on 2026-09-17 remains a separate follow-up: diagnose endpoint/account acceptance first and do not send automated real messages during CI.
 
 ## SEO and security maintenance
 
