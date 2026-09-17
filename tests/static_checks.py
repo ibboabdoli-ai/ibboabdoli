@@ -64,13 +64,13 @@ for path,(p,text) in pages.items():
         lang=p.find('html')[0]['lang']
         assert other.find('link',rel='alternate',hreflang=lang,href=BASE+path),f'Nonreciprocal alternate {path}'
 root=ET.parse(PUBLIC/'sitemap.xml').getroot()
-ns={'s':'http://www.sitemaps.org/sitemap/0.9'}
+ns={'s':'http://www.sitemaps.org/schemas/sitemap/0.9'}
 sitemap_urls=[]
 for item in root.findall('s:url',ns):
     loc=item.find('s:loc',ns).text; sitemap_urls.append(loc)
     assert loc.startswith(BASE+'/') and route(loc).is_file(),loc
     assert item.find('s:lastmod',ns).text=='2026-09-17'
-assert len(sitemap_urls)==11 and len(set(sitemap_urls))==11
+assert len(sitemap_urls)==len(set(sitemap_urls)),f'Duplicate sitemap URLs: {sitemap_urls}'
 assert set(sitemap_urls)=={BASE+p for p in pages if p!='/404.html'}
 assert 'Sitemap: '+BASE+'/sitemap.xml' in (PUBLIC/'robots.txt').read_text()
 assert 'public_html' not in [p.name for p in PUBLIC.iterdir()]
