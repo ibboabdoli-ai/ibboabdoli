@@ -57,47 +57,25 @@
     event.currentTarget.textContent = paused ? text('Starta animationer', 'Resume animations') : text('Pausa animationer', 'Pause animations');
   });
   document.addEventListener('visibilitychange', () => { root.classList.toggle('page-hidden', document.hidden); });
+
   document.querySelectorAll('[data-contact-form]').forEach(form => {
-    if (!window.fetch) return; // Native POST remains available without JS.
+    if (!window.fetch) return; // Native POST to /api/contact remains available without JS.
     const status = form.querySelector('[data-form-status]');
     const button = form.querySelector('button[type="submit"]');
     const original = button.textContent;
     let pending = false;
 
-    const responseMessage = (payload, response) => {
-      const errors = Array.isArray(payload?.errors)
-        ? payload.errors.map(item => item?.message).filter(Boolean)
-        : [];
-      if (errors.length) return errors.join(' ');
-      if (typeof payload?.error === 'string' && payload.error.trim()) return payload.error.trim();
-      if (typeof payload?.message === 'string' && payload.message.trim()) return payload.message.trim();
-      return response?.status ? `HTTP ${response.status}` : '';
-    };
-
-    const openEmailFallback = () => {
-      const name = String(form.elements.namedItem('name')?.value || '').trim();
-      const email = String(form.elements.namedItem('email')?.value || '').trim();
-      const message = String(form.elements.namedItem('message')?.value || '').trim();
-      const subject = text(
-        `Kontakt via ibboabdoli.com${name ? ` – ${name}` : ''}`,
-        `Contact via ibboabdoli.com${name ? ` – ${name}` : ''}`
-      );
-      const body = text(
-        `Namn: ${name}\nE-post: ${email}\n\nMeddelande:\n${message}`,
-        `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`
-      );
-      status.dataset.state = 'pending';
-      status.textContent = text(
-        'Formulärtjänsten är tillfälligt ersatt med e-post. Ett färdigt meddelande öppnas nu – kontrollera och tryck Skicka.',
-        'The form service is temporarily replaced by email. A prepared message is opening now – review it and press Send.'
-      );
-      window.location.href = `mailto:ibbo.abdoli@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    };
-
     form.addEventListener('submit', async event => {
       event.preventDefault();
       if (pending || !form.reportValidity()) return;
       if (form.elements.namedItem('_gotcha')?.value) return;
+
+      const payload = {
+        name: String(form.elements.namedItem('name')?.value || '').trim(),
+        email: String(form.elements.namedItem('email')?.value || '').trim(),
+        message: String(form.elements.namedItem('message')?.value || '').trim(),
+        _gotcha: String(form.elements.namedItem('_gotcha')?.value || '')
+      };
 
       pending = true;
       button.disabled = true;
@@ -106,48 +84,35 @@
       status.dataset.state = 'pending';
 
       try {
-        const response = await fetch(form.action, {
+        const response = await fetch('/api/contact', {
           method: 'POST',
-          body: new FormData(form),
-          headers: { Accept: 'application/json' }
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
         });
 
-        let payload = null;
-        try {
-          payload = await response.json();
-        } catch {
-          payload = null;
-        }
+        let result = null;
+        try { result = await response.json(); } catch { result = null; }
 
         if (!response.ok) {
-          const detail = responseMessage(payload, response);
-          if (/form not found/i.test(detail)) {
-            openEmailFallback();
-            return;
-          }
           status.dataset.state = 'error';
-          if (response.status === 429) {
-            status.textContent = text(
-              'För många försök på kort tid. Vänta en stund och försök igen.',
-              'Too many attempts in a short time. Please wait a moment and try again.'
-            );
-          } else {
-            status.textContent = text(
-              `Formuläret kunde inte skickas${detail ? `: ${detail}` : '.'} Texten finns kvar.`,
-              `The form could not be sent${detail ? `: ${detail}` : '.'} Your text has been kept.`
-            );
-          }
+          status.textContent = result?.message || text(
+            'Meddelandet kunde inte skickas. Texten finns kvar. Försök igen eller skicka e-post direkt.',
+            'The message could not be sent. Your text has been kept. Try again or send an email directly.'
+          );
           return;
         }
 
         status.dataset.state = 'success';
         status.textContent = text('Tack! Ditt meddelande har skickats.', 'Thank you! Your message has been sent.');
         form.reset();
-      } catch (error) {
+      } catch {
         status.dataset.state = 'error';
         status.textContent = text(
-          'Nätverkskontakten med Formspree misslyckades. Texten finns kvar. Försök igen eller skicka e-post direkt.',
-          'The network connection to Formspree failed. Your text has been kept. Try again or send an email directly.'
+          'Nätverkskontakten misslyckades. Texten finns kvar. Försök igen eller skicka e-post direkt.',
+          'The network connection failed. Your text has been kept. Try again or send an email directly.'
         );
       } finally {
         pending = false;
