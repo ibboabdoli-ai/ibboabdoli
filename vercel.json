@@ -3,8 +3,28 @@
   "redirects": [
     {
       "source": "/:path*",
-      "has": [{ "type": "host", "value": "ibboabdoli.com" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "ibboabdoli.com"
+        }
+      ],
       "destination": "https://www.ibboabdoli.com/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/public_html",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/public_html/",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/public_html/index.html",
+      "destination": "/",
       "permanent": true
     }
   ],
@@ -12,10 +32,30 @@
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" }
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=()"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'none'; script-src 'self' 'sha256-Oxp8EoUom0+H1bZqe7Ayx8wvoYDD6tQocQVssvw9nQQ=' 'sha256-V2ViI8+8kECwkHr/eV/HCmMLs0CjcEwFN8mOBymYTD8=' 'sha256-WzpJKLWMB93v9kg5xql+CW3+i09JWO/5Tfz89ZpOuj0=' 'sha256-YFbc3EctmKEzawwRDgx8bgjpYpN/blSIZfrbzjIh9e8=' 'sha256-cNSNilPobm50BKc1z9yhhhYgpQnmHu/JDOnbdBQ8BAY=' 'sha256-gZjA5YValr/VCnEcAkAuhvZOSvmkPbvLBmeNVWONUm0=' 'sha256-lZWbyew1kKLxIQe2sYCrXbCfOR7ZE6WZpa1PsytVLr8=' 'sha256-nz/JE3uI3TQhce7CEKGYg9g6zAQvWitebmH1/v+nBK0=' 'sha256-pZRPz51pMcfd+46kTIp7pn2qwx6iilw37fHfDJVco44='; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://formspree.io; form-action 'self' https://formspree.io; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; upgrade-insecure-requests"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        }
       ]
     }
-  ]
+  ],
+  "buildCommand": "node scripts/build.mjs",
+  "outputDirectory": "dist",
+  "installCommand": ""
 }
