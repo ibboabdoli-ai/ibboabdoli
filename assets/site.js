@@ -58,33 +58,74 @@
   });
   document.addEventListener('visibilitychange', () => { root.classList.toggle('page-hidden', document.hidden); });
   document.querySelectorAll('[data-contact-form]').forEach(form => {
-    if (!window.fetch || !window.AbortController) return; // Native POST remains available without JS.
+    if (!window.fetch) return; // Native POST remains available without JS.
     const status = form.querySelector('[data-form-status]');
     const button = form.querySelector('button[type="submit"]');
     const original = button.textContent;
     let pending = false;
+
+    const responseMessage = (payload, response) => {
+      const errors = Array.isArray(payload?.errors)
+        ? payload.errors.map(item => item?.message).filter(Boolean)
+        : [];
+      if (errors.length) return errors.join(' ');
+      if (typeof payload?.error === 'string' && payload.error.trim()) return payload.error.trim();
+      if (typeof payload?.message === 'string' && payload.message.trim()) return payload.message.trim();
+      return response?.status ? `HTTP ${response.status}` : '';
+    };
+
     form.addEventListener('submit', async event => {
       event.preventDefault();
       if (pending || !form.reportValidity()) return;
       if (form.elements.namedItem('_gotcha')?.value) return;
+
       pending = true;
       button.disabled = true;
       button.textContent = text('Skickar…', 'Sending…');
       status.textContent = text('Skickar ditt meddelande…', 'Sending your message…');
       status.dataset.state = 'pending';
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 15000);
+
       try {
-        const response = await fetch(form.action, { method: 'POST', body: new FormData(form), headers: { Accept: 'application/json' }, signal: controller.signal });
-        if (!response.ok) throw new Error('Submission was not accepted');
+        const response = await fetch(form.action, {
+          method: 'POST',
+          body: new FormData(form),
+          headers: { Accept: 'application/json' }
+        });
+
+        let payload = null;
+        try {
+          payload = await response.json();
+        } catch {
+          payload = null;
+        }
+
+        if (!response.ok) {
+          const detail = responseMessage(payload, response);
+          status.dataset.state = 'error';
+          if (response.status === 429) {
+            status.textContent = text(
+              'För många försök på kort tid. Vänta en stund och försök igen.',
+              'Too many attempts in a short time. Please wait a moment and try again.'
+            );
+          } else {
+            status.textContent = text(
+              `Formuläret kunde inte skickas${detail ? `: ${detail}` : '.'} Texten finns kvar.`,
+              `The form could not be sent${detail ? `: ${detail}` : '.'} Your text has been kept.`
+            );
+          }
+          return;
+        }
+
         status.dataset.state = 'success';
         status.textContent = text('Tack! Ditt meddelande har skickats.', 'Thank you! Your message has been sent.');
         form.reset();
-      } catch {
+      } catch (error) {
         status.dataset.state = 'error';
-        status.textContent = text('Det gick inte att bekräfta att meddelandet kom fram. Texten finns kvar. Kontakta mig via e-post vid behov.', 'Delivery could not be confirmed. Your text has been kept. Please contact me by email as needed.');
+        status.textContent = text(
+          'Nätverkskontakten med Formspree misslyckades. Texten finns kvar. Försök igen eller skicka e-post direkt.',
+          'The network connection to Formspree failed. Your text has been kept. Try again or send an email directly.'
+        );
       } finally {
-        clearTimeout(timeout);
         pending = false;
         button.disabled = false;
         button.textContent = original;
