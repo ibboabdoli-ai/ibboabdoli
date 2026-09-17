@@ -1,0 +1,69 @@
+name: Release 7 production evidence
+on:
+  push:
+    branches: [audit/release-7-production]
+    paths: ['.github/workflows/release-measurement.yml']
+permissions:
+  contents: read
+jobs:
+  measure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build the unchanged release website
+        run: |
+          node scripts/build.mjs
+          mkdir -p .qa
+          python tests/static_checks.py | tee .qa/static-report.json
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('tests/live_checks.py')
+          s=p.read_text()
+          # Persist completed checks before the existing strict domain assertion.
+          s=s.replace('class NoRedirect(HTTPRedirectHandler):', "(OUT / 'production-content-report.json').write_text(json.dumps(report, indent=2) + '\\n')\nclass NoRedirect(HTTPRedirectHandler):")
+          p.write_text(s)
+          PY
+      - name: Production smoke test including strict redirect check
+        id: smoke
+        continue-on-error: true
+        run: python tests/live_checks.py 2>&1 | tee .qa/production-smoke.log
+      - name: Lighthouse on the public production URL
+        run: |
+          npx --yes lighthouse@12.8.2 https://www.ibboabdoli.com/ --quiet --chrome-flags="--headless --no-sandbox" --output=json --output=html --output-path=.qa/lighthouse-live-mobile
+          npx --yes lighthouse@12.8.2 https://www.ibboabdoli.com/ --quiet --preset=desktop --chrome-flags="--headless --no-sandbox" --output=json --output=html --output-path=.qa/lighthouse-live-desktop
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for p in Path('.qa').glob('lighthouse-live-*.report.json'):
+              r=json.loads(p.read_text())
+              print(p.name,{k:v['score'] for k,v in r['categories'].items()},'CLS',r['audits']['cumulative-layout-shift']['numericValue'])
+              assert not r.get('runtimeError')
+          PY
+      - name: Record the unresolved platform finding explicitly
+        if: always()
+        env:
+          SMOKE_OUTCOME: ${{ steps.smoke.outcome }}
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          r={'release_commit':'69523244c4f4d1ddbe5b8e1a204cfd484a86ea2c','smoke_outcome':os.environ['SMOKE_OUTCOME'],'remaining_issue':8,'finding':'Observed apex redirect is 307; permanent 308 not verified. Main production check remains failed for this finding.','email_delivery':'not tested','search_console':'not accessed'}
+          Path('.qa/release-findings.json').write_text(json.dumps(r,indent=2))
+          print(json.dumps(r,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: release-7-production-evidence
+          path: .qa/
+          include-hidden-files: true
+          retention-days: 7
