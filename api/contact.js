@@ -96,7 +96,8 @@ module.exports = async function handler(req, res) {
 
   const plain = `Namn: ${name}\nE-post: ${email}\n\nMeddelande:\n${message}`;
   const html = `<h2>Ny kontakt från ibboabdoli.com</h2><p><strong>Namn:</strong> ${escapeHtml(name)}</p><p><strong>E-post:</strong> ${escapeHtml(email)}</p><hr><p style="white-space:pre-wrap">${escapeHtml(message)}</p>`;
-  const idempotencyKey = `portfolio-contact/${createHash('sha256').update(`${email}\n${message}`).digest('hex').slice(0, 32)}`;
+  const retryWindow = Math.floor(Date.now() / 300000);
+  const idempotencyKey = `portfolio-contact/${createHash('sha256').update(`${email}\n${message}\n${retryWindow}`).digest('hex').slice(0, 32)}`;
 
   let resendResponse;
   try {
