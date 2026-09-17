@@ -1,4 +1,4 @@
-import { cpSync, mkdirSync, rmSync, existsSync, readdirSync, readFileSync } from 'node:fs';
+import { cpSync, mkdirSync, rmSync, existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 const root = process.cwd();
 const out = resolve(root, 'dist');
@@ -14,11 +14,16 @@ function scan(dir) {
     const file = join(dir, item.name);
     if (item.isDirectory()) scan(file);
     else if (item.name.endsWith('.html')) {
-      const html = readFileSync(file, 'utf8');
+      let html = readFileSync(file, 'utf8');
+      const migrated = html.replaceAll('https://formspree.io/f/xqapdadv', '/api/contact');
+      if (migrated !== html) {
+        writeFileSync(file, migrated);
+        html = migrated;
+      }
       if (/\son[a-z]+\s*=/i.test(html) || /<style\b/i.test(html) || /\sstyle\s*=/i.test(html)) throw new Error(`Inline executable/style content: ${file}`);
       if (!html.includes('Page not found') && !html.includes('https://www.ibboabdoli.com/')) throw new Error(`Canonical host missing: ${file}`);
     }
   }
 }
 scan(out);
-console.log('Built explicit public allowlist into dist; archive, scripts and documentation excluded.');
+console.log('Built explicit public allowlist into dist; contact forms use /api/contact; archive, scripts and documentation excluded.');

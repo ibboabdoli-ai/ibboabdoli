@@ -70,7 +70,7 @@ for item in root.findall('s:url',ns):
     loc=item.find('s:loc',ns).text; sitemap_urls.append(loc)
     assert loc.startswith(BASE+'/') and route(loc).is_file(),loc
     assert item.find('s:lastmod',ns).text=='2026-09-17'
-assert len(sitemap_urls)==11 and len(set(sitemap_urls))==11
+assert len(sitemap_urls)==len(set(sitemap_urls)),f'Duplicate sitemap URLs: {sitemap_urls}'
 assert set(sitemap_urls)=={BASE+p for p in pages if p!='/404.html'}
 assert 'Sitemap: '+BASE+'/sitemap.xml' in (PUBLIC/'robots.txt').read_text()
 assert 'public_html' not in [p.name for p in PUBLIC.iterdir()]
@@ -84,6 +84,10 @@ for home in ['/','/en/']:
     downloads=[a.get('href') for tag,a in pages[home][0].tags if tag=='a' and 'download' in a and (a.get('href') or '').lower().endswith('.pdf')]
     assert len(downloads)==2,f'Expected exactly two visible CV downloads on {home}: {downloads}'
     assert len(set(downloads))==2,f'Duplicate CV download links on {home}: {downloads}'
+    forms=[a for tag,a in pages[home][0].tags if tag=='form' and 'data-contact-form' in a]
+    assert len(forms)==1,f'Expected one contact form on {home}'
+    assert forms[0].get('method','').upper()=='POST' and forms[0].get('action')=='/api/contact',forms[0]
+    assert 'formspree.io' not in pages[home][1].lower(),f'Formspree leaked into built {home}'
 assert struct.unpack('>II',(PUBLIC/'og-image.png').read_bytes()[16:24])==(1200,630)
 for case in (PUBLIC/'cases').glob('*/index.html'):
     assert 'TechArticle' in case.read_text()
@@ -91,7 +95,12 @@ assert 'innerHTML' not in (PUBLIC/'assets/site.js').read_text()
 tawk=(PUBLIC/'assets/tawk.js').read_text()
 assert 'embed.tawk.to/6895ddde56ddd81926b30080/1j24mlbt5' in tawk
 assert 'https://*.tawk.to' in csp and 'wss://*.tawk.to' in csp and 'frame-src https://*.tawk.to' in csp
+assert 'formspree.io' not in csp.lower()
+api=(ROOT/'api/contact.js').read_text()
+assert 'process.env.RESEND_API_KEY' in api
+assert 'contact@iboren.se' in api and 'api.resend.com/emails' in api
+assert 'ibbo.abdoli@gmail.com' in api
 for home in ['/', '/en/']:
     assert 'https://ai.ibboabdoli.com' in pages[home][1]
 assert any(r.get('source')=='/ai' and r.get('destination')=='https://ai.ibboabdoli.com' for r in config['redirects'])
-print(json.dumps({'status':'passed','html_pages':len(pages),'indexable_urls':len(sitemap_urls),'internal_links_and_assets_checked':checks,'cv_files':len(cv_files),'active_cv_downloads_per_home':2,'og_image':'1200x630','csp':'hashes verified','legacy':'excluded'},indent=2))
+print(json.dumps({'status':'passed','html_pages':len(pages),'indexable_urls':len(sitemap_urls),'internal_links_and_assets_checked':checks,'cv_files':len(cv_files),'active_cv_downloads_per_home':2,'contact_backend':'/api/contact + Resend','og_image':'1200x630','csp':'hashes verified','legacy':'excluded'},indent=2))
