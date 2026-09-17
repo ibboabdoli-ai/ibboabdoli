@@ -1,65 +1,53 @@
 name: Portfolio quality
 on:
+  pull_request:
   push:
-    branches: [fix/portfolio-audit-20260917]
+    branches: [main]
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
+concurrency:
+  group: portfolio-quality-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
-  audit:
-    if: github.ref == 'refs/heads/fix/portfolio-audit-20260917'
+  quality:
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Stabilize progressive navigation before the first paint
-        run: |
-          python - <<'PY'
-          import re
-          from pathlib import Path
-          files=[Path('index.html'),Path('card/index.html')]
-          for folder in ['en','cases','privacy']:
-              files.extend(Path(folder).rglob('index.html'))
-          for p in files:
-              text=p.read_text().replace('display=swap','display=optional')
-              if '<nav' in text and '/assets/init.js' not in text:
-                  text=re.sub(r'(<meta\b[^>]*charset[^>]*>)',r'\1\n<script src="/assets/init.js"></script>',text,count=1)
-              p.write_text(text)
-          Path('assets/init.js').write_text("/* Set progressive layout before CSS and the first paint. */\ndocument.documentElement.classList.add('js');\n")
-          with Path('README.md').open('a') as f:
-              f.write('\n## Layout stability\nThe small same-origin init.js runs before styles to prevent the no-JavaScript navigation layout flashing before enhancement. The full behaviour script remains deferred. Google Fonts uses display=optional: slow first visits keep system fallback fonts rather than shifting late. No-JavaScript navigation remains tested.\n')
-          PY
-      - name: Build and check static pages
+      - name: Static source and build checks
         run: |
           node --check assets/init.js
           node --check assets/site.js
           node scripts/build.mjs
           mkdir -p .qa
           python tests/static_checks.py | tee .qa/static-report.json
-      - name: Install browser test tooling
+      - name: Install development-only browser tooling
         run: |
           pip install playwright==1.57.0
           python -m playwright install --with-deps chromium
-      - name: Browser regression checks
+      - name: Browser regressions with production security headers
         run: |
           python scripts/serve.py > .qa/http.log 2>&1 &
           python - <<'PY'
           import time, urllib.request
           for attempt in range(30):
               try:
-                  urllib.request.urlopen('http://127.0.0.1:4173/',timeout=2)
+                  urllib.request.urlopen('http://127.0.0.1:4173/', timeout=2)
                   break
               except Exception: time.sleep(1)
-          else: raise RuntimeError('Test server unavailable')
+          else: raise RuntimeError('Test server did not start')
           PY
           python tests/browser_checks.py
-      - name: Lighthouse and mobile layout-shift budget
+      - name: Lighthouse mobile and desktop budgets
         run: |
           npx --yes lighthouse@12.8.2 http://127.0.0.1:4173/ --quiet --chrome-flags="--headless --no-sandbox" --output=json --output=html --output-path=.qa/lighthouse-mobile
           npx --yes lighthouse@12.8.2 http://127.0.0.1:4173/ --quiet --preset=desktop --chrome-flags="--headless --no-sandbox" --output=json --output=html --output-path=.qa/lighthouse-desktop
@@ -68,25 +56,57 @@ jobs:
           from pathlib import Path
           for p in Path('.qa').glob('lighthouse-*.report.json'):
               r=json.loads(p.read_text())
-              print(p.name,{k:v['score'] for k,v in r['categories'].items()},'CLS',r['audits']['cumulative-layout-shift']['numericValue'])
+              print(p.name, {k:v['score'] for k,v in r['categories'].items()}, 'CLS',r['audits']['cumulative-layout-shift']['numericValue'])
               assert not r.get('runtimeError')
               assert r['audits']['cumulative-layout-shift']['numericValue'] <= .1
               assert r['categories']['performance']['score'] >= .85
               assert r['categories']['accessibility']['score'] >= .95
               assert r['categories']['seo']['score'] >= .95
           PY
-      - name: Commit tested layout fix only to working branch
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A -- . ':!.github'
-          git commit -m 'Prevent mobile navigation and webfont layout shifts measured by Lighthouse'
-          git push origin HEAD:fix/portfolio-audit-20260917
           git rev-parse HEAD > .qa/tested-commit.txt
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: portfolio-quality-report
+          path: .qa/
+          include-hidden-files: true
+          retention-days: 7
+  production:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify deployed content, redirects and security headers
+        run: |
+          node scripts/build.mjs
+          python tests/live_checks.py
+      - name: Measure public production with Lighthouse
+        run: |
+          npx --yes lighthouse@12.8.2 https://www.ibboabdoli.com/ --quiet --chrome-flags="--headless --no-sandbox" --output=json --output=html --output-path=.qa/lighthouse-live-mobile
+          npx --yes lighthouse@12.8.2 https://www.ibboabdoli.com/ --quiet --preset=desktop --chrome-flags="--headless --no-sandbox" --output=json --output=html --output-path=.qa/lighthouse-live-desktop
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for p in Path('.qa').glob('lighthouse-live-*.report.json'):
+              r=json.loads(p.read_text())
+              print(p.name, {k:v['score'] for k,v in r['categories'].items()}, 'CLS', r['audits']['cumulative-layout-shift']['numericValue'])
+              assert not r.get('runtimeError')
+          PY
+          git rev-parse HEAD > .qa/tested-commit.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: portfolio-production-report
           path: .qa/
           include-hidden-files: true
           retention-days: 7
