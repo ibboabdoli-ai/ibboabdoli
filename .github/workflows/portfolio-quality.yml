@@ -1,0 +1,25 @@
+name: Portfolio quality
+on:
+  push:
+    branches: [fix/portfolio-audit-20260917]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Package public baseline for isolated audit
+        run: |
+          mkdir -p audit-source
+          cp index.html robots.txt sitemap.xml vercel.json 404.html README.md audit-source/
+          cp -r assets en card audit-source/
+          cp favicon* og-image* apple-touch-icon.png icon-*.png audit-source/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: portfolio-audit-source
+          path: audit-source/
+          retention-days: 3
