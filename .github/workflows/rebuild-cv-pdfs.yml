@@ -1,0 +1,38 @@
+name: Rebuild CV PDFs
+
+on:
+  push:
+    branches: [cv-binary-update]
+    paths:
+      - 'tmp/cv-parts/trigger.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: cv-binary-update
+      - name: Rebuild PDFs
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p assets/cv
+          cat tmp/cv-parts/sv.part* | tr -d '\n\r' | base64 -d > assets/cv/Ibbo_Abdoli_CV_2026_SV_Final.pdf
+          cat tmp/cv-parts/en.part* | tr -d '\n\r' | base64 -d > assets/cv/Ibbo_Abdoli_CV_2026_EN_Final.pdf
+          echo '5c007d50563825de1d7ca030906dcb8b275a47d7f380c122ece0cef3e1313321  assets/cv/Ibbo_Abdoli_CV_2026_SV_Final.pdf' | sha256sum -c -
+          echo '6d64da78c153ee55933fd50e41c9306a4c70c84fa6d3c9f4f6cf5926d02a5894  assets/cv/Ibbo_Abdoli_CV_2026_EN_Final.pdf' | sha256sum -c -
+          head -c 5 assets/cv/Ibbo_Abdoli_CV_2026_SV_Final.pdf | grep -q '%PDF-'
+          head -c 5 assets/cv/Ibbo_Abdoli_CV_2026_EN_Final.pdf | grep -q '%PDF-'
+      - name: Commit rebuilt CVs
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/cv/Ibbo_Abdoli_CV_2026_SV_Final.pdf assets/cv/Ibbo_Abdoli_CV_2026_EN_Final.pdf
+          git rm -r tmp/cv-parts
+          git commit -m 'Replace site CV PDFs with Professional V2'
+          git push origin HEAD:cv-binary-update
