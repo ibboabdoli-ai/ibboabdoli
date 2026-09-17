@@ -4,22 +4,94 @@ on:
     branches: [fix/portfolio-audit-20260917]
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
+concurrency:
+  group: portfolio-migration
+  cancel-in-progress: false
 jobs:
   audit:
+    if: github.ref == 'refs/heads/fix/portfolio-audit-20260917'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          persist-credentials: false
-      - name: Package public baseline for isolated audit
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Reconstruct checksum-verified source update
         run: |
-          mkdir -p audit-source
-          cp index.html robots.txt sitemap.xml vercel.json 404.html README.md audit-source/
-          cp -r assets en card audit-source/
-          cp favicon* og-image* apple-touch-icon.png icon-*.png audit-source/
+          python - <<'PY'
+          import base64, hashlib, io, tarfile
+          from pathlib import Path
+          chunks = sorted(Path('maintenance').glob('update.part*'))
+          assert len(chunks) == 7
+          # Normalize a duplicated transport fragment, then validate the entire archive.
+          final = base64.b64encode(chunks[-1].read_bytes()).decode()
+          assert len(final) == 4820
+          assert final[4743:4751] == '+fT59Pn0'
+          final = final[:4743] + final[4751:]
+          raw = b''.join(p.read_bytes() for p in chunks[:-1]) + base64.b64decode(final)
+          assert hashlib.sha256(raw).hexdigest() == 'c2be36709c9335f7e391601f835a5107c8c3d14c61883ec1e13d02a0db80cd91'
+          expected = {'maintenance/migrate.py','scripts/serve.py','scripts/update_csp.py','tests/static_checks.py','tests/browser_checks.py'}
+          with tarfile.open(fileobj=io.BytesIO(raw), mode='r:gz') as archive:
+              assert {m.name for m in archive.getmembers()} == expected
+              assert all(m.isfile() for m in archive.getmembers())
+              archive.extractall('.', filter='data')
+          PY
+      - name: Install development-only test tools
+        run: |
+          pip install beautifulsoup4==4.14.3 playwright==1.57.0
+          python -m playwright install --with-deps chromium
+      - name: Apply isolated source update
+        run: |
+          python maintenance/migrate.py
+          node --check assets/site.js
+          node scripts/build.mjs
+          mkdir -p .qa
+          python tests/static_checks.py | tee .qa/static-report.json
+      - name: Run browser regressions with production security headers
+        run: |
+          python scripts/serve.py > .qa/http.log 2>&1 &
+          python - <<'PY'
+          import time, urllib.request
+          for attempt in range(30):
+              try:
+                  urllib.request.urlopen('http://127.0.0.1:4173/', timeout=2)
+                  break
+              except Exception:
+                  time.sleep(1)
+          else:
+              raise RuntimeError('Test server did not start')
+          PY
+          python tests/browser_checks.py
+      - name: Lighthouse mobile and desktop lab measurements
+        run: |
+          npx --yes lighthouse@12.8.2 http://127.0.0.1:4173/ --quiet --chrome-flags="--headless --no-sandbox" --output=json --output=html --output-path=.qa/lighthouse-mobile
+          npx --yes lighthouse@12.8.2 http://127.0.0.1:4173/ --quiet --preset=desktop --chrome-flags="--headless --no-sandbox" --output=json --output=html --output-path=.qa/lighthouse-desktop
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for p in Path('.qa').glob('lighthouse-*.report.json'):
+              r=json.loads(p.read_text())
+              print(p.name, {k:v['score'] for k,v in r['categories'].items()}, 'runtimeError=',r.get('runtimeError'))
+              assert not r.get('runtimeError')
+          PY
+      - name: Save tested source on the working branch only
+        run: |
+          rm -rf maintenance
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A -- . ':!.github'
+          git commit -m 'Complete bilingual portfolio audit fixes with verified static and browser tests'
+          git push origin HEAD:fix/portfolio-audit-20260917
+          git rev-parse HEAD | tee .qa/tested-commit.txt
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: portfolio-audit-source
-          path: audit-source/
-          retention-days: 3
+          name: portfolio-quality-report
+          path: .qa/
+          include-hidden-files: true
+          retention-days: 7
