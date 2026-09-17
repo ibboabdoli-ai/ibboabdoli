@@ -1,7 +1,7 @@
 const { createHash } = require('node:crypto');
 
 const DESTINATION = 'ibbo.abdoli@gmail.com';
-const FROM = 'Ibbo Portfolio <contact@iboren.se>';
+const FROM = 'Ibbo Portfolio <contact@ibboabdoli.com>';
 const ALLOWED_HOSTS = new Set(['www.ibboabdoli.com', 'ibboabdoli.com']);
 
 function wantsHtml(req) {
