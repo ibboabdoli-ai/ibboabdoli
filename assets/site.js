@@ -74,6 +74,26 @@
       return response?.status ? `HTTP ${response.status}` : '';
     };
 
+    const openEmailFallback = () => {
+      const name = String(form.elements.namedItem('name')?.value || '').trim();
+      const email = String(form.elements.namedItem('email')?.value || '').trim();
+      const message = String(form.elements.namedItem('message')?.value || '').trim();
+      const subject = text(
+        `Kontakt via ibboabdoli.com${name ? ` – ${name}` : ''}`,
+        `Contact via ibboabdoli.com${name ? ` – ${name}` : ''}`
+      );
+      const body = text(
+        `Namn: ${name}\nE-post: ${email}\n\nMeddelande:\n${message}`,
+        `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`
+      );
+      status.dataset.state = 'pending';
+      status.textContent = text(
+        'Formulärtjänsten är tillfälligt ersatt med e-post. Ett färdigt meddelande öppnas nu – kontrollera och tryck Skicka.',
+        'The form service is temporarily replaced by email. A prepared message is opening now – review it and press Send.'
+      );
+      window.location.href = `mailto:ibbo.abdoli@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    };
+
     form.addEventListener('submit', async event => {
       event.preventDefault();
       if (pending || !form.reportValidity()) return;
@@ -101,6 +121,10 @@
 
         if (!response.ok) {
           const detail = responseMessage(payload, response);
+          if (/form not found/i.test(detail)) {
+            openEmailFallback();
+            return;
+          }
           status.dataset.state = 'error';
           if (response.status === 429) {
             status.textContent = text(
