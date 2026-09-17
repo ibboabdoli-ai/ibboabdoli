@@ -5,14 +5,11 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
-concurrency:
-  group: portfolio-migration
-  cancel-in-progress: false
 jobs:
   audit:
     if: github.ref == 'refs/heads/fix/portfolio-audit-20260917'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -21,53 +18,48 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Reconstruct checksum-verified source update
+      - name: Stabilize progressive navigation before the first paint
         run: |
           python - <<'PY'
-          import base64, hashlib, io, tarfile
+          import re
           from pathlib import Path
-          chunks = sorted(Path('maintenance').glob('update.part*'))
-          assert len(chunks) == 7
-          # Normalize a duplicated transport fragment, then validate the entire archive.
-          final = base64.b64encode(chunks[-1].read_bytes()).decode()
-          assert len(final) == 4820
-          assert final[4743:4751] == '+fT59Pn0'
-          final = final[:4743] + final[4751:]
-          raw = b''.join(p.read_bytes() for p in chunks[:-1]) + base64.b64decode(final)
-          assert hashlib.sha256(raw).hexdigest() == 'c2be36709c9335f7e391601f835a5107c8c3d14c61883ec1e13d02a0db80cd91'
-          expected = {'maintenance/migrate.py','scripts/serve.py','scripts/update_csp.py','tests/static_checks.py','tests/browser_checks.py'}
-          with tarfile.open(fileobj=io.BytesIO(raw), mode='r:gz') as archive:
-              assert {m.name for m in archive.getmembers()} == expected
-              assert all(m.isfile() for m in archive.getmembers())
-              archive.extractall('.', filter='data')
+          files=[Path('index.html'),Path('card/index.html')]
+          for folder in ['en','cases','privacy']:
+              files.extend(Path(folder).rglob('index.html'))
+          for p in files:
+              text=p.read_text().replace('display=swap','display=optional')
+              if '<nav' in text and '/assets/init.js' not in text:
+                  text=re.sub(r'(<meta\b[^>]*charset[^>]*>)',r'\1\n<script src="/assets/init.js"></script>',text,count=1)
+              p.write_text(text)
+          Path('assets/init.js').write_text("/* Set progressive layout before CSS and the first paint. */\ndocument.documentElement.classList.add('js');\n")
+          with Path('README.md').open('a') as f:
+              f.write('\n## Layout stability\nThe small same-origin init.js runs before styles to prevent the no-JavaScript navigation layout flashing before enhancement. The full behaviour script remains deferred. Google Fonts uses display=optional: slow first visits keep system fallback fonts rather than shifting late. No-JavaScript navigation remains tested.\n')
           PY
-      - name: Install development-only test tools
+      - name: Build and check static pages
         run: |
-          pip install beautifulsoup4==4.14.3 playwright==1.57.0
-          python -m playwright install --with-deps chromium
-      - name: Apply isolated source update
-        run: |
-          python maintenance/migrate.py
+          node --check assets/init.js
           node --check assets/site.js
           node scripts/build.mjs
           mkdir -p .qa
           python tests/static_checks.py | tee .qa/static-report.json
-      - name: Run browser regressions with production security headers
+      - name: Install browser test tooling
+        run: |
+          pip install playwright==1.57.0
+          python -m playwright install --with-deps chromium
+      - name: Browser regression checks
         run: |
           python scripts/serve.py > .qa/http.log 2>&1 &
           python - <<'PY'
           import time, urllib.request
           for attempt in range(30):
               try:
-                  urllib.request.urlopen('http://127.0.0.1:4173/', timeout=2)
+                  urllib.request.urlopen('http://127.0.0.1:4173/',timeout=2)
                   break
-              except Exception:
-                  time.sleep(1)
-          else:
-              raise RuntimeError('Test server did not start')
+              except Exception: time.sleep(1)
+          else: raise RuntimeError('Test server unavailable')
           PY
           python tests/browser_checks.py
-      - name: Lighthouse mobile and desktop lab measurements
+      - name: Lighthouse and mobile layout-shift budget
         run: |
           npx --yes lighthouse@12.8.2 http://127.0.0.1:4173/ --quiet --chrome-flags="--headless --no-sandbox" --output=json --output=html --output-path=.qa/lighthouse-mobile
           npx --yes lighthouse@12.8.2 http://127.0.0.1:4173/ --quiet --preset=desktop --chrome-flags="--headless --no-sandbox" --output=json --output=html --output-path=.qa/lighthouse-desktop
@@ -76,18 +68,21 @@ jobs:
           from pathlib import Path
           for p in Path('.qa').glob('lighthouse-*.report.json'):
               r=json.loads(p.read_text())
-              print(p.name, {k:v['score'] for k,v in r['categories'].items()}, 'runtimeError=',r.get('runtimeError'))
+              print(p.name,{k:v['score'] for k,v in r['categories'].items()},'CLS',r['audits']['cumulative-layout-shift']['numericValue'])
               assert not r.get('runtimeError')
+              assert r['audits']['cumulative-layout-shift']['numericValue'] <= .1
+              assert r['categories']['performance']['score'] >= .85
+              assert r['categories']['accessibility']['score'] >= .95
+              assert r['categories']['seo']['score'] >= .95
           PY
-      - name: Save tested source on the working branch only
+      - name: Commit tested layout fix only to working branch
         run: |
-          rm -rf maintenance
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A -- . ':!.github'
-          git commit -m 'Complete bilingual portfolio audit fixes with verified static and browser tests'
+          git commit -m 'Prevent mobile navigation and webfont layout shifts measured by Lighthouse'
           git push origin HEAD:fix/portfolio-audit-20260917
-          git rev-parse HEAD | tee .qa/tested-commit.txt
+          git rev-parse HEAD > .qa/tested-commit.txt
       - uses: actions/upload-artifact@v4
         if: always()
         with:
