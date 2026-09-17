@@ -76,11 +76,16 @@ assert 'Sitemap: '+BASE+'/sitemap.xml' in (PUBLIC/'robots.txt').read_text()
 assert 'public_html' not in [p.name for p in PUBLIC.iterdir()]
 for private in ['archive','docs','scripts','tests','maintenance','.git']:
     assert not (PUBLIC/private).exists(),f'Private output leaked: {private}'
-for cv in (PUBLIC/'assets/cv').glob('*.pdf'):
+cv_files=list((PUBLIC/'assets/cv').glob('*.pdf'))
+assert len(cv_files)>=2
+for cv in cv_files:
     assert cv.read_bytes().startswith(b'%PDF-') and cv.stat().st_size>10000,cv
-assert len(list((PUBLIC/'assets/cv').glob('*.pdf')))==2
+for home in ['/','/en/']:
+    downloads=[a.get('href') for tag,a in pages[home][0].tags if tag=='a' and 'download' in a and (a.get('href') or '').lower().endswith('.pdf')]
+    assert len(downloads)==2,f'Expected exactly two visible CV downloads on {home}: {downloads}'
+    assert len(set(downloads))==2,f'Duplicate CV download links on {home}: {downloads}'
 assert struct.unpack('>II',(PUBLIC/'og-image.png').read_bytes()[16:24])==(1200,630)
 for case in (PUBLIC/'cases').glob('*/index.html'):
     assert 'TechArticle' in case.read_text()
 assert 'innerHTML' not in (PUBLIC/'assets/site.js').read_text()
-print(json.dumps({'status':'passed','html_pages':len(pages),'indexable_urls':len(sitemap_urls),'internal_links_and_assets_checked':checks,'cv_files':2,'og_image':'1200x630','csp':'hashes verified','legacy':'excluded'},indent=2))
+print(json.dumps({'status':'passed','html_pages':len(pages),'indexable_urls':len(sitemap_urls),'internal_links_and_assets_checked':checks,'cv_files':len(cv_files),'active_cv_downloads_per_home':2,'og_image':'1200x630','csp':'hashes verified','legacy':'excluded'},indent=2))
