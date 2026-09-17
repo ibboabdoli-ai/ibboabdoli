@@ -1,19 +1,33 @@
 /* tawk.to live-chat loader. Property/widget IDs supplied by the site owner. */
 (() => {
   let loaded = false;
+  let fallbackTimer;
+
   const loadTawk = () => {
     if (loaded) return;
     loaded = true;
+    if (fallbackTimer) window.clearTimeout(fallbackTimer);
+
     window.Tawk_API = window.Tawk_API || {};
     window.Tawk_LoadStart = new Date();
-    const s1 = document.createElement("script");
-    const s0 = document.getElementsByTagName("script")[0];
-    s1.async = true;
-    s1.src = "https://embed.tawk.to/6895ddde56ddd81926b30080/1j24mlbt5";
-    s1.charset = "UTF-8";
-    s1.setAttribute("crossorigin", "*");
-    s1.dataset.tawkWidget = "true";
-    s0.parentNode.insertBefore(s1, s0);
+
+    const script = document.createElement('script');
+    const firstScript = document.getElementsByTagName('script')[0];
+    script.async = true;
+    script.src = 'https://embed.tawk.to/6895ddde56ddd81926b30080/1j24mlbt5';
+    script.charset = 'UTF-8';
+    script.setAttribute('crossorigin', '*');
+    script.dataset.tawkWidget = 'true';
+    firstScript.parentNode.insertBefore(script, firstScript);
   };
-  window.addEventListener("load", () => window.setTimeout(loadTawk, 2500), { once: true });
+
+  const interactionOptions = { once: true, passive: true };
+  window.addEventListener('pointerdown', loadTawk, interactionOptions);
+  window.addEventListener('touchstart', loadTawk, interactionOptions);
+  window.addEventListener('keydown', loadTawk, { once: true });
+
+  // Idle visitors still receive the widget, but outside the initial performance window.
+  window.addEventListener('load', () => {
+    fallbackTimer = window.setTimeout(loadTawk, 20000);
+  }, { once: true });
 })();
