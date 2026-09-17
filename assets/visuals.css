@@ -1,0 +1,27 @@
+
+.stage:before,.stage:after{display:none!important}
+.stage{background:linear-gradient(180deg,#0b1721,#050a0f)!important;border-color:rgba(139,198,235,.28)!important;box-shadow:0 30px 100px rgba(0,0,0,.48),inset 0 0 70px rgba(37,186,255,.06)!important}
+.cell-hud{position:absolute;z-index:5;top:18px;left:20px;right:20px;display:flex;justify-content:space-between;gap:12px;color:#33c2ff;font:800 10px var(--mono);letter-spacing:.14em;text-transform:uppercase}
+.cell-hud span:last-child{color:#62f6b1}.cell-hud i{display:inline-block;width:7px;height:7px;border-radius:50%;background:#62f6b1;box-shadow:0 0 12px #62f6b1;margin-right:8px}
+.cell-svg{position:absolute;inset:48px 18px 46px;width:calc(100% - 36px);height:calc(100% - 94px)}
+.cell-foot{position:absolute;z-index:5;left:20px;right:20px;bottom:15px;display:flex;justify-content:space-between;gap:12px;color:#78909f;font:800 9px var(--mono);letter-spacing:.12em;text-transform:uppercase}
+.hero-arm{transform-origin:505px 390px;animation:heroArm 7s ease-in-out infinite}.hero-tool{transform-origin:252px 252px;animation:heroTool 4.2s ease-in-out infinite}.hero-part{animation:heroPart 7.4s linear infinite}.hero-part.p2{animation-delay:-2.45s}.hero-part.p3{animation-delay:-4.9s}.hero-scan{animation:heroScan 3.3s ease-in-out infinite}.hero-led{animation:heroLed 1.2s ease-in-out infinite}
+@keyframes heroArm{0%,100%{transform:rotate(-3deg)}48%{transform:rotate(5deg)}72%{transform:rotate(1deg)}}
+@keyframes heroTool{0%,100%{transform:rotate(4deg)}50%{transform:rotate(-8deg)}}
+@keyframes heroPart{0%{transform:translateX(-170px);opacity:0}10%,88%{opacity:1}100%{transform:translateX(560px);opacity:0}}
+@keyframes heroScan{0%,18%{transform:translateY(-90px);opacity:0}35%,75%{opacity:.85}92%,100%{transform:translateY(155px);opacity:0}}
+@keyframes heroLed{50%{opacity:.35}}
+.case .visual{height:210px!important;position:relative;overflow:hidden;background:linear-gradient(180deg,#0b1721,#050a0f)!important;border-bottom:1px solid rgba(139,198,235,.2)!important}
+.case .visual:before,.case .visual:after{content:none!important}.case-visual-svg{width:100%;height:100%;display:block}.case-scan{animation:caseScan 3.7s ease-in-out infinite}.case-pulse{animation:casePulse 1.6s ease-in-out infinite}.case-data{animation:caseData 6s linear infinite}.case-data.d2{animation-delay:-2s}.case-data.d3{animation-delay:-4s}
+@keyframes caseScan{0%,20%{transform:translateY(-70px);opacity:0}38%,72%{opacity:.85}92%,100%{transform:translateY(135px);opacity:0}}
+@keyframes casePulse{50%{opacity:.3}}
+@keyframes caseData{0%{transform:translateX(-24px);opacity:.2}50%{opacity:1}100%{transform:translateX(24px);opacity:.2}}
+.portrait{min-height:430px!important;position:relative!important;overflow:hidden!important;background:linear-gradient(180deg,#08131c,#04080c)!important;border:1px solid rgba(139,198,235,.25)!important;box-shadow:0 28px 85px rgba(0,0,0,.42),inset 0 0 70px rgba(37,186,255,.06)!important}
+.portrait:before,.portrait:after{display:none!important}.about-live{position:absolute;inset:0;display:grid;grid-template-rows:auto 1fr auto;padding:20px}.about-live-head,.about-live-foot{display:flex;justify-content:space-between;gap:12px;color:#33c2ff;font:800 10px var(--mono);letter-spacing:.13em;text-transform:uppercase}.about-live-head span:last-child{color:#62f6b1}.about-live-foot{color:#78909f}.about-live-svg{width:100%;height:100%;min-height:315px}.about-scan{animation:aboutScan 4.4s ease-in-out infinite}.about-node{animation:aboutNode 1.8s ease-in-out infinite}.about-node.n2{animation-delay:-.6s}.about-node.n3{animation-delay:-1.2s}.about-flow{stroke-dasharray:8 11;animation:aboutFlow 2.4s linear infinite}
+@keyframes aboutScan{0%,18%{transform:translateY(-115px);opacity:0}38%,72%{opacity:.7}92%,100%{transform:translateY(175px);opacity:0}}
+@keyframes aboutNode{50%{opacity:.35;filter:drop-shadow(0 0 2px currentColor)}}
+@keyframes aboutFlow{to{stroke-dashoffset:-38}}
+@media(max-width:980px){.case .visual{height:230px!important}.portrait{min-height:360px!important}}
+@media(max-width:560px){.cell-svg{inset:44px 8px 40px;width:calc(100% - 16px);height:calc(100% - 84px)}.cell-hud{left:12px;right:12px;top:12px;font-size:8px}.cell-foot{left:12px;right:12px;font-size:7px}.case .visual{height:190px!important}.portrait{min-height:330px!important}.about-live{padding:14px}.about-live-svg{min-height:260px}}
+@media(prefers-reduced-motion:reduce){.hero-arm,.hero-tool,.hero-part,.hero-scan,.hero-led,.case-scan,.case-pulse,.case-data,.about-scan,.about-node,.about-flow{animation:none!important}}
+
