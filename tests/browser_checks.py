@@ -1,4 +1,4 @@
-"""Browser regression tests. External form delivery is always mocked; no email is sent."""
+"""Browser regression tests. Contact API delivery is mocked; no email is sent."""
 import json, os
 from pathlib import Path
 from playwright.sync_api import sync_playwright
@@ -8,7 +8,7 @@ BASE=os.environ.get('BASE_URL','http://127.0.0.1:4173')
 paths=['/','/en/','/card/','/privacy/','/en/privacy/']
 slugs=['abb-robot-troubleshooting','machine-vision-timeout','plc-fieldbus-troubleshooting']
 paths += [prefix+slug+'/' for prefix in ['/cases/','/en/cases/'] for slug in slugs]
-report={'layouts':0,'checks':[],'form_delivery':'mocked, not an inbox delivery test','fonts':'external Google Fonts enabled'}
+report={'layouts':0,'checks':[],'form_delivery':'mocked same-origin API, not an inbox delivery test','fonts':'external Google Fonts enabled'}
 with sync_playwright() as pw:
     options={'headless':True,'args':['--no-sandbox']}
     if os.environ.get('BROWSER_PATH'):options['executable_path']=os.environ['BROWSER_PATH']
@@ -66,15 +66,16 @@ with sync_playwright() as pw:
     for section in ['focus','cases','process','about','resume','contact']:
         assert np.locator('#'+section).is_visible()
         assert np.locator('#'+section).evaluate('(el)=>getComputedStyle(el).opacity')=='1'
-    assert np.locator('form').get_attribute('method')=='POST';nojs.close()
-    report['checks'].append('No-JavaScript navigation, all six sections and native POST fallback remain available')
+    assert np.locator('form').get_attribute('method')=='POST'
+    assert np.locator('form').get_attribute('action')=='/api/contact';nojs.close()
+    report['checks'].append('No-JavaScript navigation, all six sections and native POST /api/contact fallback remain available')
     for path in ['/','/en/']:
         for mode in ['success','rejected','network']:
             page.goto(BASE+path,wait_until='networkidle')
             def handle(route):
                 if mode=='network':route.abort()
-                else:route.fulfill(status=200 if mode=='success' else 422,content_type='application/json',body=json.dumps({'ok':mode=='success'}))
-            page.route('https://formspree.io/f/xqapdadv',handle)
+                else:route.fulfill(status=200 if mode=='success' else 422,content_type='application/json',body=json.dumps({'ok':mode=='success','message':'Test rejection' if mode=='rejected' else 'ok'}))
+            page.route('**/api/contact',handle)
             page.locator('input[name=name]').fill('Portfolio test')
             page.locator('input[name=email]').fill('test@example.com')
             page.locator('textarea[name=message]').fill('Automated browser test. No real submission.')
@@ -84,8 +85,8 @@ with sync_playwright() as pw:
             assert page.locator('button[type=submit]').is_enabled()
             assert bool(page.locator('textarea').input_value())==(mode!='success')
             assert page.url.startswith(BASE)
-            page.unroute('https://formspree.io/f/xqapdadv',handle)
-    report['checks'].append('Six mocked SV/EN form tests: success, rejection and network failure; errors preserve the message')
+            page.unroute('**/api/contact',handle)
+    report['checks'].append('Six mocked SV/EN contact API tests: success, rejection and network failure; errors preserve the message')
     report['status']='passed';browser.close()
 (OUT/'browser-report.json').write_text(json.dumps(report,indent=2))
 print(json.dumps(report,indent=2))
