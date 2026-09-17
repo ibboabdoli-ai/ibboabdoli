@@ -98,7 +98,7 @@ assert 'https://*.tawk.to' in csp and 'wss://*.tawk.to' in csp and 'frame-src ht
 assert 'formspree.io' not in csp.lower()
 api=(ROOT/'api/contact.js').read_text()
 assert 'process.env.RESEND_API_KEY' in api
-assert 'contact@iboren.se' in api and 'api.resend.com/emails' in api
+assert 'contact@ibboabdoli.com' in api and 'api.resend.com/emails' in api
 assert 'ibbo.abdoli@gmail.com' in api
 for home in ['/', '/en/']:
     assert 'https://ai.ibboabdoli.com' in pages[home][1]
