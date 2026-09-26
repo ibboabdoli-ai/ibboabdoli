@@ -68,14 +68,18 @@ with sync_playwright() as pw:
         assert np.locator('#'+section).evaluate('(el)=>getComputedStyle(el).opacity')=='1'
     assert np.locator('form').get_attribute('method')=='POST'
     assert np.locator('form').get_attribute('action')=='/api/contact';nojs.close()
-    report['checks'].append('No-JavaScript navigation, all six sections and native POST /api/contact fallback remain available')
+    report['checks'].append('No-JavaScript navigation and all six sections remain available; contact endpoint stays wired for the JavaScript security flow')
     for path in ['/','/en/']:
         for mode in ['success','rejected','network']:
             page.goto(BASE+path,wait_until='networkidle')
             def handle(route):
-                if mode=='network':route.abort()
-                else:route.fulfill(status=200 if mode=='success' else 422,content_type='application/json',body=json.dumps({'ok':mode=='success','message':'Test rejection' if mode=='rejected' else 'ok'}))
-            page.route('**/api/contact',handle)
+                if route.request.method=='GET':
+                    route.fulfill(status=200,content_type='application/json',body=json.dumps({'ok':True,'challenge':'browser-test-challenge','minDelayMs':0}))
+                elif mode=='network':
+                    route.abort()
+                else:
+                    route.fulfill(status=200 if mode=='success' else 422,content_type='application/json',body=json.dumps({'ok':mode=='success','message':'Test rejection' if mode=='rejected' else 'ok'}))
+            page.route('**/api/contact*',handle)
             page.locator('input[name=name]').fill('Portfolio test')
             page.locator('input[name=email]').fill('test@example.com')
             page.locator('textarea[name=message]').fill('Automated browser test. No real submission.')
@@ -85,7 +89,7 @@ with sync_playwright() as pw:
             assert page.locator('button[type=submit]').is_enabled()
             assert bool(page.locator('textarea').input_value())==(mode!='success')
             assert page.url.startswith(BASE)
-            page.unroute('**/api/contact',handle)
+            page.unroute('**/api/contact*',handle)
     report['checks'].append('Six mocked SV/EN contact API tests: success, rejection and network failure; errors preserve the message')
     report['status']='passed';browser.close()
 (OUT/'browser-report.json').write_text(json.dumps(report,indent=2))
