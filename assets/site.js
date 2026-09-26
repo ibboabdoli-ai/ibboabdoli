@@ -59,23 +59,56 @@
   document.addEventListener('visibilitychange', () => { root.classList.toggle('page-hidden', document.hidden); });
 
   document.querySelectorAll('[data-contact-form]').forEach(form => {
-    if (!window.fetch) return; // Native POST to /api/contact remains available without JS.
+    if (!window.fetch) return;
     const status = form.querySelector('[data-form-status]');
     const button = form.querySelector('button[type="submit"]');
     const original = button.textContent;
     let pending = false;
+    let challenge = '';
+    let challengeReadyAt = 0;
+    let challengePromise = null;
+
+    const loadChallenge = async () => {
+      const response = await fetch('/api/contact?challenge=1', {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        cache: 'no-store'
+      });
+
+      let result = null;
+      try { result = await response.json(); } catch { result = null; }
+      if (!response.ok || !result?.challenge) throw new Error('challenge_failed');
+
+      challenge = String(result.challenge);
+      challengeReadyAt = Date.now() + Math.max(1600, Number(result.minDelayMs || 0) + 100);
+      return challenge;
+    };
+
+    const warmChallenge = () => {
+      if (challenge || challengePromise) return;
+      challengePromise = loadChallenge()
+        .catch(() => null)
+        .finally(() => { challengePromise = null; });
+    };
+
+    const ensureChallenge = async () => {
+      if (!challenge) {
+        if (challengePromise) await challengePromise;
+        if (!challenge) await loadChallenge();
+      }
+
+      const remaining = challengeReadyAt - Date.now();
+      if (remaining > 0) await new Promise(resolve => window.setTimeout(resolve, remaining));
+      return challenge;
+    };
+
+    form.addEventListener('focusin', warmChallenge, { once: true });
+    form.addEventListener('pointerdown', warmChallenge, { once: true });
 
     form.addEventListener('submit', async event => {
       event.preventDefault();
       if (pending || !form.reportValidity()) return;
       if (form.elements.namedItem('_gotcha')?.value) return;
-
-      const payload = {
-        name: String(form.elements.namedItem('name')?.value || '').trim(),
-        email: String(form.elements.namedItem('email')?.value || '').trim(),
-        message: String(form.elements.namedItem('message')?.value || '').trim(),
-        _gotcha: String(form.elements.namedItem('_gotcha')?.value || '')
-      };
 
       pending = true;
       button.disabled = true;
@@ -84,6 +117,15 @@
       status.dataset.state = 'pending';
 
       try {
+        const activeChallenge = await ensureChallenge();
+        const payload = {
+          name: String(form.elements.namedItem('name')?.value || '').trim(),
+          email: String(form.elements.namedItem('email')?.value || '').trim(),
+          message: String(form.elements.namedItem('message')?.value || '').trim(),
+          _gotcha: String(form.elements.namedItem('_gotcha')?.value || ''),
+          _challenge: activeChallenge
+        };
+
         const response = await fetch('/api/contact', {
           method: 'POST',
           headers: {
@@ -97,6 +139,10 @@
         try { result = await response.json(); } catch { result = null; }
 
         if (!response.ok) {
+          if (response.status === 403) {
+            challenge = '';
+            warmChallenge();
+          }
           status.dataset.state = 'error';
           status.textContent = result?.message || text(
             'Meddelandet kunde inte skickas. Texten finns kvar. Försök igen eller skicka e-post direkt.',
@@ -108,11 +154,14 @@
         status.dataset.state = 'success';
         status.textContent = text('Tack! Ditt meddelande har skickats.', 'Thank you! Your message has been sent.');
         form.reset();
+        challenge = '';
+        warmChallenge();
       } catch {
+        challenge = '';
         status.dataset.state = 'error';
         status.textContent = text(
-          'Nätverkskontakten misslyckades. Texten finns kvar. Försök igen eller skicka e-post direkt.',
-          'The network connection failed. Your text has been kept. Try again or send an email directly.'
+          'Säkerhetskontrollen eller nätverkskontakten misslyckades. Texten finns kvar. Försök igen eller skicka e-post direkt.',
+          'The security check or network connection failed. Your text has been kept. Try again or send an email directly.'
         );
       } finally {
         pending = false;
