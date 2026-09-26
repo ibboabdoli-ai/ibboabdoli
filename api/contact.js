@@ -1,8 +1,18 @@
-const { createHash } = require('node:crypto');
+const { createHash, createHmac, randomBytes, timingSafeEqual } = require('node:crypto');
 
 const DESTINATION = 'ibbo.abdoli@gmail.com';
 const FROM = 'Ibbo Portfolio <contact@ibboabdoli.com>';
 const ALLOWED_HOSTS = new Set(['www.ibboabdoli.com', 'ibboabdoli.com']);
+
+const CHALLENGE_MIN_AGE_MS = 1500;
+const CHALLENGE_MAX_AGE_MS = 2 * 60 * 60 * 1000;
+const POST_RATE_WINDOW_MS = 10 * 60 * 1000;
+const POST_RATE_MAX = 3;
+const CHALLENGE_RATE_WINDOW_MS = 10 * 60 * 1000;
+const CHALLENGE_RATE_MAX = 20;
+
+const rateStore = globalThis.__ibboContactRateStore || new Map();
+globalThis.__ibboContactRateStore = rateStore;
 
 function wantsHtml(req) {
   const accept = String(req.headers.accept || '');
@@ -20,13 +30,125 @@ function escapeHtml(value) {
 
 function allowedSource(req) {
   const candidate = req.headers.origin || req.headers.referer;
-  if (!candidate) return true;
+  if (!candidate) return false;
   try {
     const host = new URL(candidate).hostname.toLowerCase();
     return ALLOWED_HOSTS.has(host) || (host.endsWith('.vercel.app') && host.startsWith('ibboabdoli-'));
   } catch {
     return false;
   }
+}
+
+function clientIp(req) {
+  const forwarded = req.headers['x-vercel-forwarded-for'] || req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '';
+  const value = Array.isArray(forwarded) ? forwarded[0] : String(forwarded).split(',')[0];
+  return value.trim();
+}
+
+function rateKey(req, scope) {
+  const ip = clientIp(req);
+  if (!ip) return null;
+  return `${scope}:${createHash('sha256').update(ip).digest('hex').slice(0, 24)}`;
+}
+
+function takeRateLimit(req, scope, max, windowMs) {
+  const key = rateKey(req, scope);
+  if (!key) return { allowed: true, retryAfterSeconds: 0 };
+
+  const now = Date.now();
+  const cutoff = now - windowMs;
+  const recent = (rateStore.get(key) || []).filter(timestamp => timestamp > cutoff);
+
+  if (recent.length >= max) {
+    const retryAfterMs = Math.max(1000, recent[0] + windowMs - now);
+    rateStore.set(key, recent);
+    return { allowed: false, retryAfterSeconds: Math.ceil(retryAfterMs / 1000) };
+  }
+
+  recent.push(now);
+  rateStore.set(key, recent);
+
+  if (rateStore.size > 2000) {
+    for (const [storedKey, timestamps] of rateStore) {
+      const fresh = timestamps.filter(timestamp => timestamp > cutoff);
+      if (fresh.length) rateStore.set(storedKey, fresh);
+      else rateStore.delete(storedKey);
+    }
+  }
+
+  return { allowed: true, retryAfterSeconds: 0 };
+}
+
+function challengeSecret() {
+  return process.env.CONTACT_FORM_SECRET || process.env.RESEND_API_KEY || '';
+}
+
+function userAgentFingerprint(req) {
+  const userAgent = String(req.headers['user-agent'] || '').slice(0, 512);
+  return createHash('sha256').update(userAgent).digest('hex').slice(0, 16);
+}
+
+function createChallenge(req) {
+  const secret = challengeSecret();
+  if (!secret) return null;
+
+  const timestamp = Date.now();
+  const nonce = randomBytes(18).toString('base64url');
+  const fingerprint = userAgentFingerprint(req);
+  const unsigned = `${timestamp}.${nonce}.${fingerprint}`;
+  const signature = createHmac('sha256', secret).update(unsigned).digest('base64url');
+  return `${unsigned}.${signature}`;
+}
+
+function safeEqual(left, right) {
+  const leftBuffer = Buffer.from(left);
+  const rightBuffer = Buffer.from(right);
+  return leftBuffer.length === rightBuffer.length && timingSafeEqual(leftBuffer, rightBuffer);
+}
+
+function verifyChallenge(req, token) {
+  const secret = challengeSecret();
+  if (!secret || !token) return false;
+
+  const parts = String(token).split('.');
+  if (parts.length !== 4) return false;
+
+  const [timestampRaw, nonce, fingerprint, signature] = parts;
+  const timestamp = Number(timestampRaw);
+  if (!Number.isFinite(timestamp) || !nonce || !fingerprint || !signature) return false;
+
+  const age = Date.now() - timestamp;
+  if (age < CHALLENGE_MIN_AGE_MS || age > CHALLENGE_MAX_AGE_MS) return false;
+  if (fingerprint !== userAgentFingerprint(req)) return false;
+
+  const unsigned = `${timestampRaw}.${nonce}.${fingerprint}`;
+  const expected = createHmac('sha256', secret).update(unsigned).digest('base64url');
+  return safeEqual(signature, expected);
+}
+
+function looksLikeSpam(name, email, message) {
+  const combined = `${name}\n${email}\n${message}`.toLowerCase();
+  let score = 0;
+
+  const urlCount = (message.match(/https?:\/\/|www\./gi) || []).length;
+  if (urlCount >= 2) score += 2;
+  else if (urlCount === 1) score += 1;
+
+  const strongPatterns = [
+    /freeb2bdata/i,
+    /\b(?:b2b|business)\s+(?:data|database|leads?)\b/i,
+    /\b(?:download|buy|get)\s+(?:your\s+)?data\b/i,
+    /\b(?:shutting down|last chance|offer expires?)\b/i,
+    /\b\d{1,3}\s*(?:million|m)\s+compan(?:y|ies)\b/i,
+    /\b(?:guest post|backlinks?|seo services?|domain authority)\b/i
+  ];
+
+  for (const pattern of strongPatterns) {
+    if (pattern.test(combined)) score += 2;
+  }
+
+  if (email.endsWith('@freeb2bdata.org')) score += 3;
+  return score >= 3;
 }
 
 async function readBody(req) {
@@ -60,12 +182,39 @@ function sendResult(req, res, status, message, extra = {}) {
 }
 
 module.exports = async function handler(req, res) {
+  if (req.method === 'GET') {
+    if (!allowedSource(req)) return sendResult(req, res, 403, 'Request source is not allowed.');
+
+    const rate = takeRateLimit(req, 'challenge', CHALLENGE_RATE_MAX, CHALLENGE_RATE_WINDOW_MS);
+    if (!rate.allowed) {
+      res.setHeader('Retry-After', String(rate.retryAfterSeconds));
+      return sendResult(req, res, 429, 'För många försök. Vänta en stund och försök igen.');
+    }
+
+    const challenge = createChallenge(req);
+    if (!challenge) {
+      console.error('Contact challenge secret is unavailable');
+      return sendResult(req, res, 503, 'Kontaktformuläret är tillfälligt otillgängligt. Försök igen senare.');
+    }
+
+    return sendResult(req, res, 200, 'Challenge created.', {
+      challenge,
+      minDelayMs: CHALLENGE_MIN_AGE_MS
+    });
+  }
+
   if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST');
+    res.setHeader('Allow', 'GET, POST');
     return sendResult(req, res, 405, 'Method not allowed.');
   }
 
   if (!allowedSource(req)) return sendResult(req, res, 403, 'Request source is not allowed.');
+
+  const rate = takeRateLimit(req, 'post', POST_RATE_MAX, POST_RATE_WINDOW_MS);
+  if (!rate.allowed) {
+    res.setHeader('Retry-After', String(rate.retryAfterSeconds));
+    return sendResult(req, res, 429, 'För många meddelanden på kort tid. Vänta en stund och försök igen.');
+  }
 
   const contentLength = Number(req.headers['content-length'] || 0);
   if (contentLength > 12000) return sendResult(req, res, 413, 'Meddelandet är för stort.');
@@ -80,6 +229,10 @@ module.exports = async function handler(req, res) {
   const honeypot = String(body._gotcha || '').trim();
   if (honeypot) return sendResult(req, res, 200, 'Tack! Ditt meddelande har skickats.');
 
+  if (!verifyChallenge(req, body._challenge)) {
+    return sendResult(req, res, 403, 'Säkerhetskontrollen misslyckades. Ladda om sidan och försök igen.');
+  }
+
   const name = String(body.name || '').trim();
   const email = String(body.email || '').trim().toLowerCase();
   const message = String(body.message || '').trim();
@@ -87,6 +240,11 @@ module.exports = async function handler(req, res) {
   if (name.length < 2 || name.length > 254) return sendResult(req, res, 422, 'Kontrollera namnet och försök igen.');
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) return sendResult(req, res, 422, 'Kontrollera e-postadressen och försök igen.');
   if (message.length < 10 || message.length > 4000) return sendResult(req, res, 422, 'Meddelandet måste vara mellan 10 och 4000 tecken.');
+
+  if (looksLikeSpam(name, email, message)) {
+    console.info('Blocked suspected portfolio contact spam', { source: rateKey(req, 'spam') });
+    return sendResult(req, res, 200, 'Tack! Ditt meddelande har skickats.');
+  }
 
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
@@ -106,7 +264,7 @@ module.exports = async function handler(req, res) {
       headers: {
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
-        'User-Agent': 'ibboabdoli.com-contact/1.0',
+        'User-Agent': 'ibboabdoli.com-contact/1.1',
         'Idempotency-Key': idempotencyKey
       },
       body: JSON.stringify({
